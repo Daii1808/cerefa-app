@@ -1,11 +1,13 @@
 import sys
 import os
 
-# Mantiene tu estructura intacta, conectando con config/app.py
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+# Agregamos la raíz del proyecto al path para que "src.config.app" funcione en cualquier entorno
+proyecto_raiz = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+if proyecto_raiz not in sys.path:
+    sys.path.insert(0, proyecto_raiz)
 
 from flask import Flask, render_template_string, request, redirect, url_for
-from config.app import app, supabase
+from src.config.app import app, supabase
 
 @app.route('/')
 def index():

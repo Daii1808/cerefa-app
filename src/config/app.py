@@ -7,23 +7,12 @@ load_dotenv()
 
 app = Flask(__name__)
 
-supabase: Client = create_client(
-    os.environ.get("SUPABASE_URL"),
-    os.environ.get("SUPABASE_KEY")
-)
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_KEY")
 
-@app.route('/')
-def index():
-    response = supabase.table('todos').select("*").execute()
-    todos = response.data
-
-    html = '<h1>Todos</h1><ul>'
-    for todo in todos:
-        html += f'<li>{todo["name"]}</li>'
-    html += '</ul>'
-    return html
+if supabase_url and supabase_key:
+    supabase: Client = create_client(supabase_url, supabase_key)
+else:
+    supabase = None
 
 application = app
-
-if __name__ == '__main__':
-    app.run(debug=True)
