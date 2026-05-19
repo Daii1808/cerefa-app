@@ -5,7 +5,7 @@ from core.models.pacientes import RegistroEvento
 
 app = Flask(__name__)
 
-# 1. CONFIGURACIÓN DE BASE DE DATOS
+# CONFIGURACIÓN DE BASE DE DATOS
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
     if database_url.startswith("postgres://"):
@@ -17,15 +17,16 @@ else:
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
-# ========================================================
-# FRONTEND EN INDEX.PY (HTML Integrado + Lógica separada)
-# ========================================================
 @app.route('/')
 def home():
-    # 1. Le pedimos los datos al modelo (separando la base de datos de aquí)
-    total_eventos, ultimo_saldo, estado_bd, color_bd = RegistroEvento.obtener_metricas_dashboard()
+    # 🚀 CORRECCIÓN: Ahora sí llamamos a TU función con su nombre real
+    lista_eventos, especies, total_eventos, ultimo = RegistroEvento.obtener_datos_dashboard()
+    
+    # Adaptamos los datos para el HTML
+    ultimo_saldo = ultimo.saldo_actual if ultimo else 0
+    estado_bd = "CONECTADA (Supabase)"
+    color_bd = "text-emerald-400"
 
-    # 2. El HTML metido directamente aquí como tú lo pediste
     html_content = f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -53,7 +54,6 @@ def home():
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
                 <div class="bg-zinc-950 border border-zinc-800 p-5 rounded-xl space-y-2">
                     <span class="text-xs font-medium text-zinc-500 uppercase tracking-wider">Infraestructura</span>
                     <div class="text-lg font-bold {color_bd} font-mono">{estado_bd}</div>
@@ -73,7 +73,6 @@ def home():
                     </div>
                     <p class="text-xs text-zinc-400">Ejemplares activos en el censo</p>
                 </div>
-
             </div>
 
             <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-6 space-y-4">
@@ -84,34 +83,21 @@ def home():
                         <span class="text-zinc-300 flex-1 ml-4">/api/v1/status</span>
                         <span class="text-zinc-500">Verificar latencia y entorno</span>
                     </div>
-                    <div class="flex items-center justify-between p-2.5 bg-zinc-900 rounded border border-zinc-800">
-                        <span class="text-sky-400 font-bold">POST</span>
-                        <span class="text-zinc-300 flex-1 ml-4">/api/v1/eventos</span>
-                        <span class="text-zinc-500">Inyectar datos desde las tablets</span>
-                    </div>
                 </div>
             </div>
-
+            
             <div class="text-center text-xs text-zinc-500">
                 Diseño de Arquitectura de Software Optimizado • Taller de Innovación 2026
             </div>
-
         </div>
     </body>
     </html>
     """
     return render_template_string(html_content)
 
-# ========================================================
-# ENDPOINTS REST API
-# ========================================================
 @app.route('/api/v1/status', methods=['GET'])
 def status():
-    return jsonify({
-        "status": "success", 
-        "message": "Servidor central operativo",
-        "database": "connected"
-    })
+    return jsonify({"status": "success", "message": "Servidor central operativo", "database": "connected"})
 
 if __name__ == '__main__':
     app.run(debug=True)
