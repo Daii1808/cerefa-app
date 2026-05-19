@@ -1,4 +1,16 @@
 import os
+import sys
+
+# ========================================================
+# 🚀 FIX DE RUTAS PARA VERCEL
+# Le decimos a la nube que incluya la carpeta 'src' en su radar
+# para que encuentre tus carpetas 'database' y 'core'.
+# ========================================================
+directorio_actual = os.path.dirname(os.path.abspath(__file__))
+carpeta_src = os.path.abspath(os.path.join(directorio_actual, '..'))
+if carpeta_src not in sys.path:
+    sys.path.insert(0, carpeta_src)
+
 from flask import Flask, jsonify, render_template_string
 from database.connection import db
 from core.models.pacientes import RegistroEvento
@@ -19,10 +31,10 @@ db.init_app(app)
 
 @app.route('/')
 def home():
-    # 🚀 CORRECCIÓN: Ahora sí llamamos a TU función con su nombre real
+    # 🚀 Llamamos a TU función del modelo pacientes.py
     lista_eventos, especies, total_eventos, ultimo = RegistroEvento.obtener_datos_dashboard()
     
-    # Adaptamos los datos para el HTML
+    # Adaptamos los datos para pintar en el HTML
     ultimo_saldo = ultimo.saldo_actual if ultimo else 0
     estado_bd = "CONECTADA (Supabase)"
     color_bd = "text-emerald-400"
@@ -81,23 +93,4 @@ def home():
                     <div class="flex items-center justify-between p-2.5 bg-zinc-900 rounded border border-zinc-800">
                         <span class="text-emerald-400 font-bold">GET</span>
                         <span class="text-zinc-300 flex-1 ml-4">/api/v1/status</span>
-                        <span class="text-zinc-500">Verificar latencia y entorno</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="text-center text-xs text-zinc-500">
-                Diseño de Arquitectura de Software Optimizado • Taller de Innovación 2026
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    return render_template_string(html_content)
-
-@app.route('/api/v1/status', methods=['GET'])
-def status():
-    return jsonify({"status": "success", "message": "Servidor central operativo", "database": "connected"})
-
-if __name__ == '__main__':
-    app.run(debug=True)
+                        <span class="text-zinc-500">Verificar latencia y
