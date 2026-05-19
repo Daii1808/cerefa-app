@@ -1,10 +1,11 @@
 import os
 from flask import Flask, jsonify, render_template_string
-from flask_sqlalchemy import SQLAlchemy
+from database.connection import db
+from core.models.pacientes import RegistroEvento
 
 app = Flask(__name__)
 
-# 1. CONFIGURACIÓN DE BASE DE DATOS (Producción Cloud / Desarrollo Local)
+# 1. CONFIGURACIÓN DE BASE DE DATOS
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
     if database_url.startswith("postgres://"):
@@ -14,39 +15,17 @@ else:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///cerefa_local_dev.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
-
-# 2. PROCESAR EL MODELO DIRECTO PARA RENDERIZAR
-# Importamos el modelo que creaste en pacientes.py para usarlo en la vista
-try:
-    from core.models.pacientes import RegistroEvento, CatalogoFauna
-except ImportError:
-    # Por si las rutas de carpetas locales varían en el despliegue
-    class RegistroEvento(db.Model):
-        __tablename__ = 'registro_eventos'
-        id = db.Column(db.Integer, primary_key=True)
-        saldo_actual = db.Column(db.Integer)
-        tipo_evento = db.Column(db.String(50))
+db.init_app(app)
 
 # ========================================================
-# FRONTEND EN INDEX.PY (Visualización del Censo en Vivo)
+# FRONTEND EN INDEX.PY (HTML Integrado + Lógica separada)
 # ========================================================
 @app.route('/')
 def home():
-    # LÓGICA DE OPTIMIZACIÓN: Sacamos métricas reales de la BD para mostrarlas en la pantalla
-    try:
-        total_eventos = RegistroEvento.query.count()
-        # Buscamos el último registro para ver el censo total activo o el movimiento reciente
-        ultimo_movimiento = RegistroEvento.query.order_by(RegistroEvento.id.desc()).first()
-        estado_bd = "CONECTADA (Supabase)"
-        color_bd = "text-emerald-400"
-    except Exception:
-        total_eventos = 0
-        ultimo_movimiento = None
-        estado_bd = "MODO LOCAL / CACHÉ"
-        color_bd = "text-amber-400"
+    # 1. Le pedimos los datos al modelo (separando la base de datos de aquí)
+    total_eventos, ultimo_saldo, estado_bd, color_bd = RegistroEvento.obtener_metricas_dashboard()
 
-    # HTML definitivo con Tailwind CSS optimizado para escritorio (PC)
+    # 2. El HTML metido directamente aquí como tú lo pediste
     html_content = f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -90,7 +69,7 @@ def home():
                 <div class="bg-zinc-950 border border-zinc-800 p-5 rounded-xl space-y-2">
                     <span class="text-xs font-medium text-zinc-500 uppercase tracking-wider">Último Saldo Calculado</span>
                     <div class="text-3xl font-mono font-bold text-sky-400">
-                        {ultimo_movimiento.saldo_actual if ultimo_movimiento else 0}
+                        {ultimo_saldo}
                     </div>
                     <p class="text-xs text-zinc-400">Ejemplares activos en el censo</p>
                 </div>
@@ -128,11 +107,11 @@ def home():
 # ========================================================
 @app.route('/api/v1/status', methods=['GET'])
 def status():
-    return jsonify({{
+    return jsonify({
         "status": "success", 
         "message": "Servidor central operativo",
         "database": "connected"
-    }})
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)
