@@ -29,29 +29,37 @@ else:
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
-# RUTA PRINCIPAL
 @app.route('/')
 def home():
+    error_msg = request.args.get('error')
     lista, _, _, _ = RegistroEvento.obtener_datos_dashboard()
+    
     html = """
     <!DOCTYPE html>
     <html lang="es"><head><script src="https://cdn.tailwindcss.com"></script></head>
     <body class="bg-zinc-950 text-zinc-100 p-8"><div class="max-w-6xl mx-auto">
-        <h1 class="text-2xl font-bold mb-6 border-b border-zinc-800 pb-4">🐾 Panel CEREFA: Gestión de Pacientes</h1>
         
-        <form action="/web/registrar" method="POST" class="grid grid-cols-2 lg:grid-cols-4 gap-4 bg-zinc-900 p-6 rounded-xl border border-zinc-800 mb-8">
-            <input type="text" name="numero_ficha" placeholder="N° Ficha" required class="bg-zinc-950 border border-zinc-700 p-2 rounded text-sm">
-            <input type="text" name="numero_acta_movimiento" placeholder="N° Acta" class="bg-zinc-950 border border-zinc-700 p-2 rounded text-sm">
+        {% if error_msg %}
+        <div class="bg-rose-950 border border-rose-600 p-4 rounded mb-6 text-rose-200 font-mono text-xs">
+            ❌ ERROR DETECTADO: {{ error_msg }}
+        </div>
+        {% endif %}
+
+        <h1 class="text-2xl font-bold mb-6 border-b border-zinc-800 pb-4">🐾 Panel CEREFA</h1>
+        
+        <form action="/web/registrar" method="POST" class="grid grid-cols-2 lg:grid-cols-6 gap-4 bg-zinc-900 p-6 rounded-xl border border-zinc-800 mb-8">
+            <input type="text" name="numero_ficha" placeholder="Ficha" required class="bg-zinc-950 border border-zinc-700 p-2 rounded text-sm">
+            <input type="text" name="numero_acta_movimiento" placeholder="Acta" class="bg-zinc-950 border border-zinc-700 p-2 rounded text-sm">
             <input type="text" name="nombre_comun" placeholder="Especie" required class="bg-zinc-950 border border-zinc-700 p-2 rounded text-sm">
-            <input type="text" name="categoria_evento" placeholder="Categoría" class="bg-zinc-950 border border-zinc-700 p-2 rounded text-sm">
+            <input type="text" name="categoria_evento" placeholder="Cat." class="bg-zinc-950 border border-zinc-700 p-2 rounded text-sm">
             <input type="text" name="destino" placeholder="Destino" class="bg-zinc-950 border border-zinc-700 p-2 rounded text-sm">
-            <input type="number" name="numero_ejemplar" placeholder="Cant." value="1" required class="bg-zinc-950 border border-zinc-700 p-2 rounded text-sm">
-            <input type="text" name="observacion" placeholder="Observación" class="col-span-2 lg:col-span-4 bg-zinc-950 border border-zinc-700 p-2 rounded text-sm">
-            <button type="submit" class="col-span-2 lg:col-span-4 bg-emerald-700 hover:bg-emerald-600 font-bold p-2 rounded">GUARDAR REGISTRO</button>
+            <button type="submit" class="bg-emerald-700 hover:bg-emerald-600 font-bold p-2 rounded text-sm">GUARDAR</button>
+            <input type="text" name="observacion" placeholder="Observación" class="col-span-2 lg:col-span-6 bg-zinc-950 border border-zinc-700 p-2 rounded text-sm">
+            <input type="hidden" name="numero_ejemplar" value="1">
         </form>
 
         <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 overflow-x-auto">
-            <table class="w-full text-sm">
+            <table class="w-full text-sm text-left">
                 <thead class="text-zinc-500 uppercase border-b border-zinc-800">
                     <tr><th class="py-2">Ficha</th><th class="py-2">Acta</th><th class="py-2">Especie</th><th class="py-2">Cat</th><th class="py-2">Destino</th><th class="py-2">Obs</th></tr>
                 </thead>
@@ -67,28 +75,3 @@ def home():
                     </tr>
                     {% endfor %}
                 </tbody>
-            </table>
-        </div>
-    </div></body></html>
-    """
-    return render_template_string(html, lista=lista)
-
-# RUTA DE REGISTRO
-@app.route('/web/registrar', methods=['POST'])
-def web_registrar():
-    try:
-        RegistroEvento.registrar_con_saldo(
-            numero_ficha=request.form.get('numero_ficha'),
-            numero_acta_movimiento=request.form.get('numero_acta_movimiento'),
-            nombre_comun=request.form.get('nombre_comun'),
-            categoria_evento=request.form.get('categoria_evento'),
-            destino=request.form.get('destino'),
-            observacion=request.form.get('observacion'),
-            tipo_evento="Ingreso",
-            numero_ejemplar=int(request.form.get('numero_ejemplar', 1))
-        )
-    except Exception as e:
-        print(f"Error técnico: {e}")
-    return redirect(url_for('home'))
-
-application = app
