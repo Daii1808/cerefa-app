@@ -2,9 +2,7 @@ import os
 import sys
 
 # ========================================================
-# 🚀 FIX DE RUTAS PARA VERCEL
-# Le decimos a la nube que incluya la carpeta 'src' en su radar
-# para que encuentre tus carpetas 'database' y 'core'.
+# 1. FIX DE RUTAS PARA VERCEL
 # ========================================================
 directorio_actual = os.path.dirname(os.path.abspath(__file__))
 carpeta_src = os.path.abspath(os.path.join(directorio_actual, '..'))
@@ -12,10 +10,17 @@ if carpeta_src not in sys.path:
     sys.path.insert(0, carpeta_src)
 
 from flask import Flask, jsonify, render_template_string
+
+# ========================================================
+# 2. DECLARAR LA APP INMEDIATAMENTE (Vercel exige ver esto primero)
+# ========================================================
+app = Flask(__name__)
+
+# ========================================================
+# 3. IMPORTAR TUS MODELOS (Después de declarar la app)
+# ========================================================
 from database.connection import db
 from core.models.pacientes import RegistroEvento
-
-app = Flask(__name__)
 
 # CONFIGURACIÓN DE BASE DE DATOS
 database_url = os.environ.get("DATABASE_URL")
@@ -31,7 +36,7 @@ db.init_app(app)
 
 @app.route('/')
 def home():
-    # 🚀 Llamamos a TU función del modelo pacientes.py
+    # Llamamos a TU función del modelo pacientes.py
     lista_eventos, especies, total_eventos, ultimo = RegistroEvento.obtener_datos_dashboard()
     
     # Adaptamos los datos para pintar en el HTML
@@ -93,4 +98,23 @@ def home():
                     <div class="flex items-center justify-between p-2.5 bg-zinc-900 rounded border border-zinc-800">
                         <span class="text-emerald-400 font-bold">GET</span>
                         <span class="text-zinc-300 flex-1 ml-4">/api/v1/status</span>
-                        <span class="text-zinc-500">Verificar latencia y
+                        <span class="text-zinc-500">Verificar latencia y entorno</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center text-xs text-zinc-500">
+                Diseño de Arquitectura de Software Optimizado • Taller de Innovación 2026
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return render_template_string(html_content)
+
+@app.route('/api/v1/status', methods=['GET'])
+def status():
+    return jsonify({"status": "success", "message": "Servidor central operativo", "database": "connected"})
+
+if __name__ == '__main__':
+    app.run(debug=True)
