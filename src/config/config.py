@@ -1,12 +1,9 @@
 import os
 
 class Config:
-    # TRUCO MAESTRO: Si está en Vercel, usa la carpeta temporal /tmp para que no explote.
-    # Si está en tu computador, sigue usando el archivo normal en la raíz.
-    if os.environ.get('VERCEL') == '1':
-        SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/cerefa.db'
-    else:
-        SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///cerefa.db')
-        
+    # SISTEMA REAL: Lee la base de datos externa desde las variables de entorno de Vercel.
+    # Si estás probando en local y no hay variable, usará una base de datos de respaldo.
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://usuario:password@servidor_real:5432/cerefa')
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'cerefa_secret_key_2026')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'cerefa_produccion_segura_2026')
