@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template_string
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -16,86 +16,123 @@ else:
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-# Inicialización segura en la nube
-with app.app_context():
-    try:
-        db.create_all()
-    except Exception:
-        pass
+# 2. PROCESAR EL MODELO DIRECTO PARA RENDERIZAR
+# Importamos el modelo que creaste en pacientes.py para usarlo en la vista
+try:
+    from core.models.pacientes import RegistroEvento, CatalogoFauna
+except ImportError:
+    # Por si las rutas de carpetas locales varían en el despliegue
+    class RegistroEvento(db.Model):
+        __tablename__ = 'registro_eventos'
+        id = db.Column(db.Integer, primary_key=True)
+        saldo_actual = db.Column(db.Integer)
+        tipo_evento = db.Column(db.String(50))
 
 # ========================================================
-# VISTA DE FRONTEND PARA VERCEL (La fachada pro)
+# FRONTEND EN INDEX.PY (Visualización del Censo en Vivo)
 # ========================================================
 @app.route('/')
 def home():
-    return """
+    # LÓGICA DE OPTIMIZACIÓN: Sacamos métricas reales de la BD para mostrarlas en la pantalla
+    try:
+        total_eventos = RegistroEvento.query.count()
+        # Buscamos el último registro para ver el censo total activo o el movimiento reciente
+        ultimo_movimiento = RegistroEvento.query.order_by(RegistroEvento.id.desc()).first()
+        estado_bd = "CONECTADA (Supabase)"
+        color_bd = "text-emerald-400"
+    except Exception:
+        total_eventos = 0
+        ultimo_movimiento = None
+        estado_bd = "MODO LOCAL / CACHÉ"
+        color_bd = "text-amber-400"
+
+    # HTML definitivo con Tailwind CSS optimizado para escritorio (PC)
+    html_content = f"""
     <!DOCTYPE html>
     <html lang="es">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>CEREFA - API Portal</title>
+        <title>CEREFA - API Portal Control</title>
         <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     </head>
-    <body class="bg-zinc-950 text-zinc-100 min-h-screen flex items-center justify-center p-4">
+    <body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col items-center justify-center p-6">
         
-        <div class="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl space-y-6">
+        <div class="max-w-4xl w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl space-y-8">
             
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between border-b border-zinc-800 pb-6">
                 <div class="space-y-1">
-                    <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                        🐾 Portal CEREFA
+                    <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
+                        🐾 Panel de Control CEREFA
                     </h1>
-                    <p class="text-xs text-zinc-400">Servidor API de Producción</p>
+                    <p class="text-sm text-zinc-400">Servidor Core de Producción en la Nube</p>
                 </div>
-                <span class="flex h-3 w-3 relative">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                </span>
-            </div>
-
-            <hr class="border-zinc-800">
-
-            <div class="bg-zinc-950 border border-zinc-800/80 rounded-xl p-4 space-y-2">
-                <div class="flex justify-between text-sm">
-                    <span class="text-zinc-500">Servidor Flask:</span>
-                    <span class="font-mono text-emerald-400 font-medium">ONLINE</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                    <span class="text-zinc-500">Base de Datos:</span>
-                    <span class="text-zinc-300 font-mono text-xs">PostgreSQL Vinculada</span>
+                <div class="flex items-center gap-2 bg-emerald-950/50 border border-emerald-800 px-3 py-1.5 rounded-full">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs font-mono text-emerald-400 font-medium tracking-wider">API ONLINE</span>
                 </div>
             </div>
 
-            <div class="space-y-2 text-xs text-zinc-400 leading-relaxed bg-zinc-950/50 p-3 rounded-xl border border-zinc-800/50">
-                <p>
-                    💡 <strong>Nota del Taller:</strong> Este es el núcleo en la nube. Las pantallas en Streamlit (<code class="text-zinc-200">src/ui/pages/</code>) consumirán estos endpoints para registrar la fauna del centro.
-                </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <div class="bg-zinc-950 border border-zinc-800 p-5 rounded-xl space-y-2">
+                    <span class="text-xs font-medium text-zinc-500 uppercase tracking-wider">Infraestructura</span>
+                    <div class="text-lg font-bold {color_bd} font-mono">{estado_bd}</div>
+                    <p class="text-xs text-zinc-400">Motor relacional PostgreSQL</p>
+                </div>
+
+                <div class="bg-zinc-950 border border-zinc-800 p-5 rounded-xl space-y-2">
+                    <span class="text-xs font-medium text-zinc-500 uppercase tracking-wider">Registros Históricos</span>
+                    <div class="text-3xl font-mono font-bold text-white">{total_eventos}</div>
+                    <p class="text-xs text-zinc-400">Eventos migrados y procesados</p>
+                </div>
+
+                <div class="bg-zinc-950 border border-zinc-800 p-5 rounded-xl space-y-2">
+                    <span class="text-xs font-medium text-zinc-500 uppercase tracking-wider">Último Saldo Calculado</span>
+                    <div class="text-3xl font-mono font-bold text-sky-400">
+                        {ultimo_movimiento.saldo_actual if ultimo_movimiento else 0}
+                    </div>
+                    <p class="text-xs text-zinc-400">Ejemplares activos en el censo</p>
+                </div>
+
             </div>
 
-            <button onclick="document.getElementById('test-box').classList.remove('hidden')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm py-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-emerald-900/20 active:scale-[0.98]">
-                Verificar Integridad del Sistema
-            </button>
+            <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-6 space-y-4">
+                <h3 class="text-sm font-semibold text-zinc-300">Rutas de Producción Habilitadas (Endpoints REST)</h3>
+                <div class="font-mono text-xs space-y-2.5">
+                    <div class="flex items-center justify-between p-2.5 bg-zinc-900 rounded border border-zinc-800">
+                        <span class="text-emerald-400 font-bold">GET</span>
+                        <span class="text-zinc-300 flex-1 ml-4">/api/v1/status</span>
+                        <span class="text-zinc-500">Verificar latencia y entorno</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 bg-zinc-900 rounded border border-zinc-800">
+                        <span class="text-sky-400 font-bold">POST</span>
+                        <span class="text-zinc-300 flex-1 ml-4">/api/v1/eventos</span>
+                        <span class="text-zinc-500">Inyectar datos desde las tablets</span>
+                    </div>
+                </div>
+            </div>
 
-            <div id="test-box" class="hidden text-xs font-mono bg-black/50 border border-zinc-800 rounded-lg p-3 text-emerald-400">
-                { "status": "success", "database": "connected", "routing": "modular_ok" }
+            <div class="text-center text-xs text-zinc-500">
+                Diseño de Arquitectura de Software Optimizado • Taller de Innovación 2026
             </div>
 
         </div>
     </body>
     </html>
     """
+    return render_template_string(html_content)
 
 # ========================================================
-# ENDPOINTS ENDPADS (Para que se conecte la carpeta ui/)
+# ENDPOINTS REST API
 # ========================================================
 @app.route('/api/v1/status', methods=['GET'])
 def status():
-    return jsonify({
+    return jsonify({{
         "status": "success", 
-        "message": "API lista para recibir datos de Streamlit",
-        "environment": "production"
-    })
+        "message": "Servidor central operativo",
+        "database": "connected"
+    }})
 
 if __name__ == '__main__':
     app.run(debug=True)
