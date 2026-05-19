@@ -26,7 +26,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
 # ========================================================
-# RUTA PRINCIPAL (SOLO LECTURA - DASHBOARD)
+# RUTA PRINCIPAL (DASHBOARD CON TODOS LOS CAMPOS DEL EXCEL)
 # ========================================================
 @app.route('/')
 def home():
@@ -48,7 +48,7 @@ def home():
     </head>
     <body class="bg-zinc-950 text-zinc-100 min-h-screen p-6">
         
-        <div class="max-w-5xl mx-auto space-y-8">
+        <div class="max-w-7xl mx-auto space-y-8">
             
             <div class="flex items-center justify-between border-b border-zinc-800 pb-6 mt-4">
                 <div class="space-y-1">
@@ -82,30 +82,38 @@ def home():
             </div>
 
             <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6 overflow-x-auto">
-                <h2 class="text-lg font-bold text-white mb-4">📋 Visor del Censo en Vivo</h2>
-                <table class="w-full text-left text-sm">
+                <h2 class="text-lg font-bold text-white mb-4">📋 Visor del Censo en Vivo (Datos Completos)</h2>
+                <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead class="text-zinc-500 border-b border-zinc-800 text-xs uppercase">
                         <tr>
-                            <th class="pb-3 font-medium">N° Ficha</th>
-                            <th class="pb-3 font-medium">Especie</th>
-                            <th class="pb-3 font-medium">Tipo Evento</th>
-                            <th class="pb-3 font-medium text-center">Cant.</th>
-                            <th class="pb-3 font-medium text-right text-sky-400">Saldo Actual</th>
+                            <th class="pb-3 px-2 font-medium">N° Ficha</th>
+                            <th class="pb-3 px-2 font-medium">Acta Mov.</th>
+                            <th class="pb-3 px-2 font-medium">Especie</th>
+                            <th class="pb-3 px-2 font-medium">Evento</th>
+                            <th class="pb-3 px-2 font-medium">Categoría</th>
+                            <th class="pb-3 px-2 font-medium">Destino</th>
+                            <th class="pb-3 px-2 font-medium">Observación</th>
+                            <th class="pb-3 px-2 font-medium text-center">Cant.</th>
+                            <th class="pb-3 px-2 font-medium text-right text-sky-400">Saldo</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-zinc-800/50">
                         {% for reg in lista_eventos %}
                         <tr class="hover:bg-zinc-800/30">
-                            <td class="py-3 font-mono text-zinc-300">{{ reg.numero_ficha }}</td>
-                            <td class="py-3 text-white">{{ reg.especie.nombre_comun }}</td>
-                            <td class="py-3 text-zinc-400">{{ reg.tipo_evento }}</td>
-                            <td class="py-3 text-center text-zinc-400">{{ reg.numero_ejemplar }}</td>
-                            <td class="py-3 text-right font-mono font-bold text-sky-400">{{ reg.saldo_actual }}</td>
+                            <td class="py-3 px-2 font-mono text-zinc-300">{{ reg.numero_ficha }}</td>
+                            <td class="py-3 px-2 text-zinc-400">{{ reg.numero_acta_movimiento or '-' }}</td>
+                            <td class="py-3 px-2 text-white">{{ reg.especie.nombre_comun if reg.especie else 'Desconocida' }}</td>
+                            <td class="py-3 px-2 text-zinc-400">{{ reg.tipo_evento }}</td>
+                            <td class="py-3 px-2 text-zinc-400">{{ reg.categoria_evento or '-' }}</td>
+                            <td class="py-3 px-2 text-zinc-400">{{ reg.destino or '-' }}</td>
+                            <td class="py-3 px-2 text-zinc-400 truncate max-w-xs" title="{{ reg.observacion }}">{{ reg.observacion or '-' }}</td>
+                            <td class="py-3 px-2 text-center text-zinc-400">{{ reg.numero_ejemplar }}</td>
+                            <td class="py-3 px-2 text-right font-mono font-bold text-sky-400">{{ reg.saldo_actual }}</td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="py-8 text-center text-zinc-600 font-mono text-xs">
-                                // LA BASE DE DATOS ESTÁ VACÍA // ESPERANDO CONEXIÓN DE TABLETS //
+                            <td colspan="9" class="py-8 text-center text-zinc-600 font-mono text-xs">
+                                // NO HAY REGISTROS EN LA NUBE AÚN //
                             </td>
                         </tr>
                         {% endfor %}
