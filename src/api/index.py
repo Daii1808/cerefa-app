@@ -31,7 +31,7 @@ def index():
     try:
         url, headers = get_supabase_headers()
         # Obtener los ultimos 50 registros, ordenados por los más nuevos primero
-        response = requests.get(f"{url}/rest/v1/registro_evento?select=*&order=created_at.desc&limit=50", headers=headers)
+        response = requests.get(f"{url}/rest/v1/registro_evento?select=*&order=fecha_creacion.desc&limit=50", headers=headers)
         if response.status_code == 200:
             lista = response.json()
         else:
@@ -244,7 +244,7 @@ def web_registrar():
         # 1. Calcular Saldo Actual (por especie/nombre científico)
         saldo_anterior = 0
         resp_saldo = requests.get(
-            f"{url}/rest/v1/registro_evento?nombre_cientifico=eq.{requests.utils.quote(nombre_cientifico)}&select=saldo_actual&order=created_at.desc&limit=1", 
+            f"{url}/rest/v1/registro_evento?nombre_cientifico=eq.{requests.utils.quote(nombre_cientifico)}&select=saldo_actual&order=fecha_creacion.desc&limit=1", 
             headers=headers
         )
         if resp_saldo.status_code == 200 and resp_saldo.json():
