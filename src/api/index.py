@@ -23,6 +23,23 @@ def get_supabase_headers():
         "Prefer": "return=minimal"
     }
 
+@app.route('/api/buscar_ficha/<path:ficha>')
+def api_buscar_ficha(ficha):
+    try:
+        url, headers = get_supabase_headers()
+        if "Prefer" in headers:
+            del headers["Prefer"]
+        response = requests.get(
+            f"{url}/rest/v1/registro_evento?numero_ficha=eq.{requests.utils.quote(ficha)}&select=*&order=fecha_creacion.desc&limit=1",
+            headers=headers
+        )
+        if response.status_code == 200 and response.json():
+            return response.json()[0]
+        else:
+            return {"error": "No encontrada"}, 404
+    except Exception as e:
+        return {"error": str(e)}, 500
+
 @app.route('/')
 def index():
     error_msg = request.args.get('error')
@@ -75,18 +92,36 @@ def index():
                     <label class="text-xs text-zinc-500 uppercase font-bold tracking-wider">Tipo de Evento</label>
                     <div class="flex gap-2">
                         <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="tipo_evento" value="Ingreso" class="peer sr-only" checked>
+                            <input type="radio" name="tipo_evento" value="Ingreso" class="peer sr-only" checked onchange="toggleEgreso()">
                             <div class="text-center bg-zinc-950 border border-zinc-700 text-zinc-400 p-3 rounded-lg peer-checked:bg-emerald-800 peer-checked:text-emerald-100 peer-checked:border-emerald-500 transition-all font-bold">
                                 + Ingreso
                             </div>
                         </label>
                         <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="tipo_evento" value="Egreso" class="peer sr-only">
+                            <input type="radio" name="tipo_evento" value="Egreso" class="peer sr-only" onchange="toggleEgreso()">
                             <div class="text-center bg-zinc-950 border border-zinc-700 text-zinc-400 p-3 rounded-lg peer-checked:bg-orange-800 peer-checked:text-orange-100 peer-checked:border-orange-500 transition-all font-bold">
                                 - Egreso
                             </div>
                         </label>
                     </div>
+                </div>
+
+                <!-- Búsqueda de Ficha para Egreso -->
+                <div id="div_busqueda_ficha" class="lg:col-span-3 hidden flex items-end">
+                    <div class="w-full md:w-2/3">
+                        <label class="text-xs text-orange-400 uppercase font-bold tracking-wider mb-1">Buscar N° Ficha Original (Ej: F-2026-001)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="buscar_ficha" name="buscar_ficha" placeholder="F-..." class="flex-1 bg-zinc-950 border border-orange-700/50 p-3 rounded-lg text-sm focus:border-orange-500 outline-none text-orange-100">
+                            <button type="button" onclick="buscarFichaAPI()" class="bg-orange-700 hover:bg-orange-600 font-bold px-4 rounded-lg shadow-lg text-white">Buscar</button>
+                        </div>
+                        <p id="msg_busqueda" class="text-xs mt-1 hidden"></p>
+                    </div>
+                </div>
+
+                <!-- Detalles Autocompletados (Solo Visual) -->
+                <div id="div_detalles_extra" class="lg:col-span-4 hidden grid grid-cols-2 gap-4 bg-orange-950/20 p-4 border border-orange-900/50 rounded-lg">
+                    <div><span class="text-xs text-orange-500/70 uppercase font-bold">Fecha de Ingreso:</span> <span id="lbl_fecha" class="text-sm text-orange-200 font-mono ml-2"></span></div>
+                    <div><span class="text-xs text-orange-500/70 uppercase font-bold">Saldo Actual Especie:</span> <span id="lbl_saldo" class="text-sm text-orange-200 font-mono ml-2"></span></div>
                 </div>
 
                 <!-- Columna 2: Especie -->
@@ -185,17 +220,70 @@ def index():
     <!-- DICCIONARIO PARA AUTOCOMPLETAR -->
     <script>
         const diccionarioEspecies = {
-            "PEUCO": "Parabuteo unicinctus",
-            "GOLONDRINA": "Tachycineta leucopyga",
-            "PUDU": "Pudu puda",
-            "CHOROY": "Enicognathus leptorhynchus",
-            "LECHUZA": "Tyto alba",
-            "CHILLA": "Lycalopex griseus",
-            "CULPEO": "Lycalopex culpaeus",
-            "PUMA": "Puma concolor",
-            "CONDOR": "Vultur gryphus"
-            // Puedes agregar más aquí abajo fácilmente!
+            "LORO CHOROY": "Enicognathus leptorhynchus",
+            "BANDURRIA": "Theristicus Melanophis",
+            "ZORRO CHILLA": "Lycalopex griseus",
+            "QUELTEHUE": "Vanellus chilensis",
+            "MONITO DEL MONTE": "Dromiciups gliroides",
+            "CACHAÑA": "Enicognathus ferrugineus",
+            "LECHUZA": "Tyto furcata",
+            "PETREL PLATEADO": "Fulmarus glacialoides",
+            "CHUNCHO": "Glacidium nanum",
+            "ZORZAL": "Turdus falcklandii",
+            "GUIÑA": "Leopardus Guigna",
+            "PUDÚ": "Pudu puda",
+            "TIUQUE": "Milvago chimango",
+            "CORMORAN": "Phalacrocorax carbo",
+            "PEUCO": "Parabuteo unicinctus"
         };
+
+        function toggleEgreso() {
+            const tipo = document.querySelector('input[name="tipo_evento"]:checked').value;
+            if (tipo === 'Egreso') {
+                document.getElementById('div_busqueda_ficha').classList.remove('hidden');
+                document.getElementById('div_detalles_extra').classList.remove('hidden');
+            } else {
+                document.getElementById('div_busqueda_ficha').classList.add('hidden');
+                document.getElementById('div_detalles_extra').classList.add('hidden');
+                document.getElementById('buscar_ficha').value = '';
+                document.getElementById('lbl_fecha').innerText = '';
+                document.getElementById('lbl_saldo').innerText = '';
+                document.getElementById('nombre_comun').value = '';
+                document.getElementById('nombre_cientifico').value = '';
+                document.querySelector('input[name="numero_ejemplar"]').value = '1';
+                document.getElementById('msg_busqueda').classList.add('hidden');
+            }
+        }
+
+        async function buscarFichaAPI() {
+            const ficha = document.getElementById('buscar_ficha').value.trim();
+            const msg = document.getElementById('msg_busqueda');
+            if(!ficha) return;
+            
+            msg.innerText = "Buscando...";
+            msg.className = "text-xs text-orange-400 mt-1";
+            msg.classList.remove('hidden');
+            
+            try {
+                const res = await fetch('/api/buscar_ficha/' + encodeURIComponent(ficha));
+                if(res.ok) {
+                    const data = await res.json();
+                    document.getElementById('nombre_comun').value = data.nombre_comun || '';
+                    document.getElementById('nombre_cientifico').value = data.nombre_cientifico || '';
+                    document.querySelector('input[name="numero_ejemplar"]').value = data.numero_ejemplar || '1';
+                    document.getElementById('lbl_fecha').innerText = data.fecha ? data.fecha.substring(0,10) : '-';
+                    document.getElementById('lbl_saldo').innerText = data.saldo_actual || '0';
+                    msg.innerText = "¡Ficha encontrada y datos cargados!";
+                    msg.className = "text-xs text-emerald-400 mt-1 font-bold";
+                } else {
+                    msg.innerText = "Ficha no encontrada en la base de datos.";
+                    msg.className = "text-xs text-rose-400 mt-1 font-bold";
+                }
+            } catch(e) {
+                msg.innerText = "Error buscando la ficha.";
+                msg.className = "text-xs text-rose-400 mt-1 font-bold";
+            }
+        }
 
         function actualizarNombreCientifico() {
             const comun = document.getElementById("nombre_comun").value.toUpperCase();
@@ -256,16 +344,25 @@ def web_registrar():
         else:
             saldo_actual = max(0, saldo_anterior - qty) # Evitar saldos negativos
             
-        # 2. Generar N° Ficha automático (Formato: F-YYYY-XXX)
-        resp_fichas = requests.get(
-            f"{url}/rest/v1/registro_evento?fecha=gte.{anio_actual}-01-01T00:00:00&select=id",
-            headers=headers
-        )
-        count_anio = 0
-        if resp_fichas.status_code == 200:
-            count_anio = len(resp_fichas.json())
-            
-        numero_ficha = f"F-{anio_actual}-{(count_anio + 1):03d}"
+        buscar_ficha = request.form.get('buscar_ficha', '').strip()
+        if tipo_evento == 'Egreso' and buscar_ficha:
+            numero_ficha = buscar_ficha
+        else:
+            # 2. Generar N° Ficha automático (Formato: F-YYYY-XXX)
+            resp_fichas = requests.get(
+                f"{url}/rest/v1/registro_evento?fecha=gte.{anio_actual}-01-01T00:00:00&select=numero_ficha&order=numero_ficha.desc&limit=1",
+                headers=headers
+            )
+            siguiente = 1
+            if resp_fichas.status_code == 200 and resp_fichas.json():
+                ultima = resp_fichas.json()[0].get('numero_ficha', '')
+                if ultima and '-' in ultima:
+                    try:
+                        siguiente = int(ultima.split('-')[-1]) + 1
+                    except:
+                        pass
+                        
+            numero_ficha = f"F-{anio_actual}-{siguiente:03d}"
         
         # Agrupar todos los datos para Supabase
         datos = {
