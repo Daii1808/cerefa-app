@@ -15,6 +15,13 @@ def index():
     exito_msg = request.args.get('exito')
     
     try:
+        # Modo detective: verificamos qué lee Vercel realmente
+        tiene_url = bool(os.environ.get("SUPABASE_URL"))
+        tiene_key = bool(os.environ.get("SUPABASE_KEY"))
+        
+        if not supabase:
+            raise Exception(f"Faltan llaves en Vercel -> URL existe: {tiene_url} | KEY existe: {tiene_key}")
+            
         response = supabase.table('registro_evento').select("*").execute()
         lista = response.data
     except Exception as e:
