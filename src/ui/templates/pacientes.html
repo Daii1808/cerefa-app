@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Pacientes - CEREFA{% endblock %}
+
+{% block content %}
+<div class="mb-8 mt-4">
+    <h2 class="text-2xl font-bold mb-6 border-b border-zinc-800 pb-4">📦 Pacientes Actuales en el Centro</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+        {% for especie, cantidad in inventario.items() %}
+        <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col items-center justify-center shadow-lg hover:border-emerald-500 transition-colors">
+            <span class="text-5xl font-black text-emerald-400 drop-shadow-md">{{ cantidad }}</span>
+            <span class="text-sm text-zinc-400 uppercase text-center mt-3 font-bold">{{ especie }}</span>
+        </div>
+        {% endfor %}
+        {% if not inventario %}
+        <p class='text-zinc-600 text-sm italic col-span-full'>No hay pacientes registrados en este momento.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
