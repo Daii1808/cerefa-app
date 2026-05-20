@@ -1,13 +1,26 @@
 import sys
 import os
+import requests
 
-# Agregamos la raíz del proyecto al path para que "src.config.app" funcione en cualquier entorno
+# Agregamos la raíz del proyecto al path
 proyecto_raiz = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 if proyecto_raiz not in sys.path:
     sys.path.insert(0, proyecto_raiz)
 
 from flask import Flask, render_template_string, request, redirect, url_for
-from src.config.app import app, supabase
+from src.config.app import app
+
+def get_supabase_headers():
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_KEY")
+    if not url or not key:
+        raise Exception(f"Faltan credenciales: URL={bool(url)}, KEY={bool(key)}")
+    return url, {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+    }
 
 @app.route('/')
 def index():
@@ -15,15 +28,13 @@ def index():
     exito_msg = request.args.get('exito')
     
     try:
-        # Modo detective: verificamos qué lee Vercel realmente
-        tiene_url = bool(os.environ.get("SUPABASE_URL"))
-        tiene_key = bool(os.environ.get("SUPABASE_KEY"))
-        
-        if not supabase:
-            raise Exception(f"Faltan llaves en Vercel -> URL existe: {tiene_url} | KEY existe: {tiene_key}")
-            
-        response = supabase.table('registro_evento').select("*").execute()
-        lista = response.data
+        url, headers = get_supabase_headers()
+        # Hacer petición GET a la API REST de Supabase directamente
+        response = requests.get(f"{url}/rest/v1/registro_evento?select=*", headers=headers)
+        if response.status_code == 200:
+            lista = response.json()
+        else:
+            raise Exception(f"Error de Supabase: {response.text}")
     except Exception as e:
         lista = []
         if not error_msg:
@@ -83,7 +94,7 @@ def index():
 @app.route('/web/registrar', methods=['POST'])
 def web_registrar():
     try:
-        # Extraemos los datos del formulario
+        url, headers = get_supabase_headers()
         datos = {
             "numero_ficha": request.form.get('numero_ficha'),
             "numero_acta_movimiento": request.form.get('numero_acta_movimiento'),
@@ -93,15 +104,17 @@ def web_registrar():
             "observacion": request.form.get('observacion')
         }
         
-        # Intentamos insertar en Supabase
-        resultado = supabase.table('registro_evento').insert(datos).execute()
-        
-        # Si funciona, recargamos la página con mensaje de éxito
+        # Hacer petición POST
+        response = requests.post(f"{url}/rest/v1/registro_evento", json=datos, headers=headers)
+        if response.status_code >= 400:
+            raise Exception(f"Error guardando en Supabase: {response.text}")
+            
         return redirect(url_for('index', exito="Registro guardado correctamente"))
         
     except Exception as e:
-        # Si falla, te mostramos el error exacto en pantalla
         return redirect(url_for('index', error=str(e)))
 
-# Requerido por Vercel
 application = app
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
