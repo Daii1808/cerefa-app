@@ -67,13 +67,16 @@ def index():
         error_msg = str(e)
     return render_template('index.html', lista=lista, error_msg=error_msg, exito_msg=exito_msg, usuario=session.get('usuario'))
 
+
 @app.route('/pacientes')
 def pacientes():
     try:
         inventario = repository.obtener_inventario_actual()
+        fichas_activas = repository.obtener_fichas_activas()
     except Exception as e:
         inventario = {}
-    return render_template('pacientes.html', inventario=inventario, usuario=session.get('usuario'))
+        fichas_activas = {}
+    return render_template('pacientes.html', inventario=inventario, fichas_activas=fichas_activas, usuario=session.get('usuario'))
 
 @app.route('/web/registrar', methods=['POST'])
 def web_registrar():

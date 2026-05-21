@@ -60,6 +60,59 @@ def obtener_inventario_actual():
                 inventario[nc] = r.get('saldo_actual', 0)
     return {k: v for k, v in inventario.items() if v > 0}
 
+def obtener_fichas_activas():
+    url, headers = get_supabase_headers()
+    # Obtenemos los registros ordenados cronológicamente para reconstruir el historial por ficha
+    resp = requests.get(f"{url}/rest/v1/registro_evento?select=numero_ficha,nombre_comun,tipo_evento,numero_ejemplar,observacion,destino&order=fecha_creacion.asc", headers=headers)
+    fichas_activas = {}
+    
+    if resp.status_code == 200:
+        registros = resp.json()
+        fichas_estado = {}
+        
+        for r in registros:
+            ficha = r.get('numero_ficha')
+            if not ficha or ficha == 'None': continue
+            
+            especie = r.get('nombre_comun')
+            tipo = r.get('tipo_evento')
+            try:
+                qty = int(r.get('numero_ejemplar') or 1)
+            except:
+                qty = 1
+                
+            obs = r.get('observacion') or 'Sin observaciones'
+            destino = r.get('destino') or 'En centro'
+            
+            if ficha not in fichas_estado:
+                fichas_estado[ficha] = {'saldo': 0, 'especie': especie, 'obs': obs, 'destino': destino}
+            
+            if tipo == 'Ingreso':
+                fichas_estado[ficha]['saldo'] += qty
+            elif tipo == 'Egreso':
+                fichas_estado[ficha]['saldo'] -= qty
+                
+            # Actualizamos la última observación y estado
+            if obs != 'Sin observaciones' and obs != '':
+                fichas_estado[ficha]['obs'] = obs
+            if destino != 'En centro' and destino != '':
+                fichas_estado[ficha]['destino'] = destino
+                
+        # Agrupamos las fichas con saldo positivo (Activas en el centro) por especie
+        for ficha, data in fichas_estado.items():
+            if data['saldo'] > 0:
+                especie = data['especie']
+                if not especie: continue
+                if especie not in fichas_activas:
+                    fichas_activas[especie] = []
+                fichas_activas[especie].append({
+                    'ficha': ficha,
+                    'estado': data['destino'],
+                    'observacion': data['obs']
+                })
+                
+    return fichas_activas
+
 def registrar_evento(datos_form, usuario_email):
     url, headers = get_supabase_headers()
     

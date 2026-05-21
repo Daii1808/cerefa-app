@@ -7,7 +7,7 @@
     <h2 class="text-2xl font-bold mb-6 border-b border-zinc-800 pb-4">📦 Pacientes Actuales en el Centro</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
         {% for especie, cantidad in inventario.items() %}
-        <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col items-center justify-center shadow-lg hover:border-emerald-500 transition-colors">
+        <div onclick="abrirModalPacientes('{{ especie }}')" class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex flex-col items-center justify-center shadow-lg hover:border-emerald-500 cursor-pointer transition-colors">
             <span class="text-5xl font-black text-emerald-400 drop-shadow-md">{{ cantidad }}</span>
             <span class="text-sm text-zinc-400 uppercase text-center mt-3 font-bold">{{ especie }}</span>
         </div>
@@ -17,4 +17,72 @@
         {% endif %}
     </div>
 </div>
+
+<!-- MODAL DE PACIENTES ACTIVOS -->
+<div id="modal_pacientes" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4 transition-opacity" onclick="cerrarModalPacientes(event)">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+        <button onclick="cerrarModalPacientes(event)" class="absolute top-4 right-4 text-zinc-500 hover:text-white text-xl">✕</button>
+        <div class="flex items-center gap-3 mb-4 border-b border-zinc-800 pb-4 shrink-0">
+            <div class="bg-emerald-900/50 p-3 rounded-full border border-emerald-700/50"><span class="text-2xl">🩺</span></div>
+            <div>
+                <h3 class="text-2xl font-bold text-white" id="modal_especie_titulo">Especie</h3>
+                <p class="text-sm font-mono text-emerald-400">Pacientes actualmente en el centro</p>
+            </div>
+        </div>
+        
+        <div class="overflow-y-auto pr-2 space-y-4" id="contenedor_fichas">
+            <!-- Las fichas se llenarán aquí con JS -->
+        </div>
+
+        <button onclick="cerrarModalPacientes(event)" class="mt-6 w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2 rounded-lg transition-colors shrink-0">Cerrar</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // === LÓGICA DE FICHAS ACTIVAS ===
+    // Inyectamos el diccionario de fichas activas desde el backend
+    const fichasActivas = {{ fichas_activas | tojson | safe }};
+
+    function abrirModalPacientes(especie) {
+        document.getElementById("modal_especie_titulo").innerText = especie;
+        const contenedor = document.getElementById("contenedor_fichas");
+        contenedor.innerHTML = ""; // Limpiar contenido anterior
+
+        const pacientes = fichasActivas[especie];
+
+        if (!pacientes || pacientes.length === 0) {
+            contenedor.innerHTML = `<p class="text-zinc-500 text-center italic py-4">No se encontraron detalles de las fichas para esta especie.</p>`;
+        } else {
+            pacientes.forEach(p => {
+                const fichaHTML = `
+                    <div class="bg-zinc-950 p-4 rounded-lg border border-zinc-800 hover:border-emerald-700 transition-colors">
+                        <div class="flex justify-between items-center mb-2 border-b border-zinc-800 pb-2">
+                            <span class="text-emerald-400 font-bold font-mono text-lg">${p.ficha}</span>
+                            <span class="bg-zinc-800 text-zinc-300 text-xs px-2 py-1 rounded uppercase tracking-wider">${p.estado}</span>
+                        </div>
+                        <div>
+                            <span class="text-zinc-500 block text-xs uppercase mb-1">Observación Actual</span>
+                            <p class="text-white text-sm">${p.observacion}</p>
+                        </div>
+                    </div>
+                `;
+                contenedor.innerHTML += fichaHTML;
+            });
+        }
+
+        const modal = document.getElementById("modal_pacientes");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+    }
+
+    function cerrarModalPacientes(e) {
+        if(e) e.preventDefault();
+        const modal = document.getElementById("modal_pacientes");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+    }
+</script>
 {% endblock %}
