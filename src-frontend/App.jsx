@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { guardarEvento, obtenerEventos, verificarMedico } from './supabaseService';
+import { guardarEvento, obtenerEventos, verificarMedico, actualizarEvento } from './supabaseService';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import logoCerefa from './assets/logo.jpg';
 
 function App() {
@@ -25,6 +27,18 @@ function App() {
   
   // Filtro de búsqueda para Inventario
   const [buscarInventario, setBuscarInventario] = useState('');
+
+  // Filtros Avanzados para Historial (Pestaña Registro)
+  const [filtroSemestre, setFiltroSemestre] = useState('');
+  const [filtroGeneral, setFiltroGeneral] = useState('');
+  const [filtroFecha, setFiltroFecha] = useState('');
+  const [filtroEspecie, setFiltroEspecie] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState('');
+
+  // Estados del Modal de Edición
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [registroSeleccionado, setRegistroSeleccionado] = useState(null);
+  const [modoEdicion, setModoEdicion] = useState(false);
 
   // Estados del Formulario de Evento
   const [tipoEvento, setTipoEvento] = useState('Ingreso'); // 'Ingreso' o 'Egreso'
@@ -243,6 +257,111 @@ function App() {
         nombre: r.nombre_comun,
         saldo: r.saldo_actual
       }));
+  };
+
+  // Lógica de Filtrado de Registros
+  const registrosFiltrados = registros.filter(reg => {
+    const fecha = reg.fecha ? reg.fecha.substring(0, 10) : '-';
+    const tipo = reg.tipo_evento || '';
+    const especie = reg.nombre_comun || '';
+    const resp = reg.doctor_email || '';
+    const ficha = reg.numero_ficha || '';
+    
+    const textoFila = `${ficha} ${fecha} ${tipo} ${especie} ${resp} ${reg.nombre_cientifico || ''}`.toLowerCase();
+    
+    const coincideGeneral = filtroGeneral === '' || textoFila.includes(filtroGeneral.toLowerCase());
+    const coincideFecha = filtroFecha === '' || fecha.includes(filtroFecha);
+    const coincideEspecie = filtroEspecie === '' || especie.toLowerCase().includes(filtroEspecie.toLowerCase());
+    const coincideTipo = filtroTipo === '' || tipo.toLowerCase().includes(filtroTipo.toLowerCase());
+    
+    let coincideSemestre = true;
+    if (filtroSemestre !== '' && fecha !== '-') {
+      const mes = parseInt(fecha.split('-')[1], 10);
+      if (filtroSemestre === 'S1') coincideSemestre = (mes >= 1 && mes <= 6);
+      if (filtroSemestre === 'S2') coincideSemestre = (mes >= 7 && mes <= 12);
+    }
+    
+    return coincideGeneral && coincideFecha && coincideEspecie && coincideTipo && coincideSemestre;
+  });
+
+  const descargarPDF = () => {
+    const doc = new jsPDF('l', 'pt', 'a4');
+    const añoActual = new Date().getFullYear();
+    let tituloPDF = "Reporte de Registros CEREFA";
+    if (filtroSemestre === 'S1') tituloPDF += ` - 1° Semestre ${añoActual}`;
+    if (filtroSemestre === 'S2') tituloPDF += ` - 2° Semestre ${añoActual}`;
+
+    doc.setFontSize(16);
+    doc.text(tituloPDF, 40, 40);
+
+    const columnas = [
+      "FECHA", "Nº ficha", "Nombre comun", "Nombre científico", 
+      "Nº Acta", "Cant.", "Tipo de evento", "Categoría", 
+      "Saldo anterior", "Saldo actual", "Destino", "Observaciones"
+    ];
+
+    const datosImprimir = registrosFiltrados.map(r => {
+      const fechaCorta = r.fecha ? r.fecha.substring(0, 10) : '';
+      return [
+        fechaCorta,
+        r.numero_ficha || '',
+        r.nombre_comun || '',
+        r.nombre_cientifico || '',
+        r.numero_acta_movimiento || '',
+        r.numero_ejemplar || '1',
+        r.tipo_evento || '',
+        r.categoria_evento || '',
+        r.saldo_anterior !== null ? r.saldo_anterior : '',
+        r.saldo_actual !== null ? r.saldo_actual : '',
+        r.destino || '',
+        r.observacion || ''
+      ];
+    });
+
+    if (datosImprimir.length === 0) {
+      alert("No hay registros para exportar con los filtros actuales.");
+      return;
+    }
+
+    doc.autoTable({
+      head: [columnas],
+      body: datosImprimir,
+      startY: 60,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [6, 78, 59] },
+      theme: 'grid'
+    });
+
+    const nombreArchivo = `CEREFA_Reporte_${filtroSemestre ? filtroSemestre + '_' : ''}${añoActual}.pdf`;
+    doc.save(nombreArchivo);
+  };
+
+  const abrirModal = (registro) => {
+    setRegistroSeleccionado({...registro});
+    setModoEdicion(false);
+    setModalAbierto(true);
+  };
+
+  const cerrarModal = () => {
+    setModalAbierto(false);
+    setRegistroSeleccionado(null);
+    setModoEdicion(false);
+  };
+
+  const guardarCambiosModal = async () => {
+    try {
+      await actualizarEvento(registroSeleccionado.id, {
+        fecha: registroSeleccionado.fecha,
+        numero_acta_movimiento: registroSeleccionado.numero_acta_movimiento,
+        destino: registroSeleccionado.destino,
+        observacion: registroSeleccionado.observacion
+      });
+      alert('Cambios guardados con éxito.');
+      cerrarModal();
+      await cargarDatos();
+    } catch (err) {
+      alert('Error al guardar: ' + err.message);
+    }
   };
 
   // Métricas rápidas para las tarjetas del Dashboard
@@ -574,7 +693,39 @@ function App() {
 
                 {/* Tabla de Últimos Registros */}
                 <div className="panel-oscuro">
-                  <h2>Últimos Eventos Registrados en Supabase ({registros.length})</h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                      <h2 style={{ marginBottom: 0 }}>Últimos Eventos Registrados ({registrosFiltrados.length})</h2>
+                      <button type="button" onClick={descargarPDF} style={{ backgroundColor: '#1d4ed8', color: 'white', border: '1px solid #3b82f6', padding: '6px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        📄 Descargar PDF
+                      </button>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                      <select value={filtroSemestre} onChange={(e) => setFiltroSemestre(e.target.value)} className="select-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto', backgroundColor: '#09090b' }}>
+                        <option value="">Todos los Semestres</option>
+                        <option value="S1">1° Semestre (Ene - Jun)</option>
+                        <option value="S2">2° Semestre (Jul - Dic)</option>
+                      </select>
+                      
+                      <div className="buscador-wrapper" style={{ margin: 0, flex: 1, minWidth: '150px', maxWidth: '200px' }}>
+                        <input type="text" placeholder="Busca..." value={filtroGeneral} onChange={(e) => setFiltroGeneral(e.target.value)} className="input-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', backgroundColor: 'rgba(39, 39, 42, 0.5)' }} />
+                      </div>
+                      
+                      <input type="text" placeholder="Fecha (rango)" value={filtroFecha} onChange={(e) => setFiltroFecha(e.target.value)} className="input-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto', backgroundColor: '#09090b' }} />
+                      
+                      <select value={filtroEspecie} onChange={(e) => setFiltroEspecie(e.target.value)} className="select-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto', backgroundColor: '#09090b' }}>
+                        <option value="">Filtro por Especie</option>
+                        {Object.keys(diccionarioAnimales).map(animal => <option key={animal} value={animal}>{animal}</option>)}
+                      </select>
+                      
+                      <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="select-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto', backgroundColor: '#09090b' }}>
+                        <option value="">Filtro por Tipo</option>
+                        <option value="Ingreso">Ingreso</option>
+                        <option value="Egreso">Egreso</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="contenedor-tabla">
                     <table className="tabla-cerefa">
                       <thead>
@@ -596,15 +747,15 @@ function App() {
                               Cargando registros médicos desde Supabase...
                             </td>
                           </tr>
-                        ) : registros.length === 0 ? (
+                        ) : registrosFiltrados.length === 0 ? (
                           <tr>
                             <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                              No hay registros cargados.
+                              No hay registros que coincidan con la búsqueda.
                             </td>
                           </tr>
                         ) : (
-                          registros.map((reg, index) => (
-                            <tr key={reg.id || index}>
+                          registrosFiltrados.map((reg, index) => (
+                            <tr key={reg.id || index} onClick={() => abrirModal(reg)} style={{ cursor: 'pointer' }} className="hover:bg-zinc-800 transition-colors">
                               <td>
                                 <span className="table-ficha">
                                   {reg.numero_ficha || 'F-000-0000'}
@@ -642,6 +793,61 @@ function App() {
                     </table>
                   </div>
                 </div>
+
+                {/* MODAL FICHA DE EDICIÓN */}
+                {modalAbierto && registroSeleccionado && (
+                  <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '15px' }} onClick={cerrarModal}>
+                    <div style={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '12px', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                      <button type="button" onClick={cerrarModal} style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10, color: '#71717a', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px', borderBottom: '1px solid #27272a' }}>
+                        <div style={{ backgroundColor: 'rgba(6, 78, 59, 0.5)', padding: '6px', borderRadius: '50%', border: '1px solid rgba(4, 120, 87, 0.5)', fontSize: '16px' }}>📋</div>
+                        <div>
+                          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: 'white' }}>{registroSeleccionado.numero_ficha || 'F-XXX'}</h3>
+                          <p style={{ margin: 0, fontSize: '12px', fontFamily: 'monospace', color: registroSeleccionado.tipo_evento === 'Ingreso' ? '#34d399' : '#fb923c' }}>{registroSeleccionado.tipo_evento}</p>
+                        </div>
+                      </div>
+
+                      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
+                        <div style={{ backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #27272a' }}>
+                          <span style={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase' }}>Paciente</span>
+                          <strong style={{ display: 'block', color: 'white', fontSize: '14px' }}>{registroSeleccionado.nombre_comun || '-'}</strong>
+                          <p style={{ margin: 0, fontSize: '11px', fontStyle: 'italic', color: '#a1a1aa' }}>{registroSeleccionado.nombre_cientifico || '-'}</p>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                          <div style={{ backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #27272a' }}>
+                            <span style={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase' }}>Fecha</span>
+                            <input type="text" value={registroSeleccionado.fecha || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, fecha: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid #059669' : 'none', color: 'white', fontSize: '12px', outline: 'none' }} />
+                          </div>
+                          <div style={{ backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #27272a' }}>
+                            <span style={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase' }}>N° Acta</span>
+                            <input type="text" value={registroSeleccionado.numero_acta_movimiento || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, numero_acta_movimiento: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid #059669' : 'none', color: 'white', fontSize: '12px', outline: 'none' }} />
+                          </div>
+                        </div>
+
+                        <div style={{ backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #27272a' }}>
+                          <span style={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase' }}>Destino</span>
+                          <input type="text" value={registroSeleccionado.destino || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, destino: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid #059669' : 'none', color: 'white', fontSize: '12px', outline: 'none' }} />
+                        </div>
+
+                        <div style={{ backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #27272a' }}>
+                          <span style={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase' }}>Observaciones</span>
+                          <textarea value={registroSeleccionado.observacion || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, observacion: e.target.value})} disabled={!modoEdicion} rows="2" style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid #059669' : 'none', color: 'white', fontSize: '12px', outline: 'none', resize: 'none' }} />
+                        </div>
+                      </div>
+
+                      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #27272a' }}>
+                        {!modoEdicion ? (
+                          <button onClick={() => setModoEdicion(true)} style={{ width: '100%', backgroundColor: '#b45309', color: 'white', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Modificar</button>
+                        ) : (
+                          <button onClick={guardarCambiosModal} style={{ width: '100%', backgroundColor: '#047857', color: 'white', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Guardar cambios</button>
+                        )}
+                        <button onClick={cerrarModal} style={{ width: '100%', backgroundColor: '#27272a', color: 'white', border: 'none', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}>Cerrar</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

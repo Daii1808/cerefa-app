@@ -49,6 +49,21 @@ export const obtenerEventos = async () => {
   return data;
 };
 
+// Actualizar un evento de registro médico existente
+export const actualizarEvento = async (id, datosActualizados) => {
+  const { data, error } = await supabase
+    .from('registro_evento')
+    .update(datosActualizados)
+    .eq('id', id)
+    .select();
+    
+  if (error) {
+    console.error("Error al actualizar evento:", error);
+    throw error;
+  }
+  return data;
+};
+
 // Verificar las credenciales de un médico
 export const verificarMedico = async (correo, password) => {
   const { data, error } = await supabase
