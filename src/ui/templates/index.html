@@ -58,7 +58,14 @@
 
         <div class="lg:col-span-1 flex flex-col justify-end">
             <label class="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">Categoría</label>
-            <input type="text" name="categoria_evento" placeholder="Ej: SAG Río Negro" class="bg-zinc-950 border border-zinc-700 p-3 rounded-lg text-sm outline-none w-full">
+            <input list="lista_categorias" name="categoria_evento" placeholder="Ej: SAG Río Negro" class="bg-zinc-950 border border-zinc-700 p-3 rounded-lg text-sm outline-none w-full focus:border-emerald-500">
+            <datalist id="lista_categorias">
+                <option value="SAG Puerto Montt">
+                <option value="SAG Puerto Varas">
+                <option value="SAG Osorno">
+                <option value="SAG Río Negro">
+                <option value="Particular">
+            </datalist>
         </div>
         
         <div class="lg:col-span-1 flex flex-col justify-end">
