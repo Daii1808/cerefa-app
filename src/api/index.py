@@ -53,6 +53,7 @@ def index():
         error_msg = str(e)
     return render_template('index.html', lista=lista, error_msg=error_msg, exito_msg=exito_msg, usuario=session.get('usuario'))
 
+
 @app.route('/pacientes')
 def pacientes():
     try:
