@@ -20,21 +20,35 @@ def verificar_login():
     if request.endpoint not in rutas_publicas and 'usuario' not in session:
         return redirect(url_for('login'))
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
     if request.method == 'POST':
         correo = request.form.get('correo', '').strip().lower()
         password = request.form.get('password', '').strip()
+        
         try:
             if repository.verificar_medico(correo, password):
                 session.permanent = True
                 session['usuario'] = correo
+                
+                datos_usuario = repository.obtener_usuario_por_correo(correo) 
+                
+
+                if datos_usuario and 'rol' in datos_usuario:
+                    session['rol'] = datos_usuario['rol']
+                else:
+                    # Por si acaso no encuentra el rol, le dejas uno por defecto o manejas el error
+                    session['rol'] = 'practicante' 
+                # =======================
+
                 return redirect(url_for('index'))
             else:
                 error = "Correo o contraseña incorrectos."
         except Exception as e:
             error = f"Error de Supabase: {str(e)}"
+            
     return render_template('login.html', error=error)
 
 @app.route('/logout')

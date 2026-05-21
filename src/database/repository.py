@@ -21,6 +21,27 @@ def verificar_medico(correo, password):
         return True
     return False
 
+def obtener_usuario_por_correo(correo):
+    try:
+        # Reutilizamos la misma configuración de tu compañero
+        url, headers = get_supabase_headers()
+        
+        # Hacemos la consulta a la tabla 'usuarios' filtrando por el correo
+        # Pedimos 'select=*' para traer todos los datos (incluyendo el rol)
+        url_consulta = f"{url}/rest/v1/usuarios?correo=eq.{requests.utils.quote(correo)}&select=*"
+        
+        resp = requests.get(url_consulta, headers=headers)
+        
+        if resp.status_code == 200:
+            datos = resp.json()
+            if len(datos) > 0:
+                return datos[0]  # Retorna el diccionario con todos los datos del usuario
+                
+        return None
+    except Exception as e:
+        print(f"Error al obtener usuario por correo: {str(e)}")
+        return None
+
 def obtener_ultimos_registros(limite=50):
     url, headers = get_supabase_headers()
     resp = requests.get(f"{url}/rest/v1/registro_evento?select=*&order=fecha_creacion.desc&limit={limite}", headers=headers)
@@ -107,3 +128,48 @@ def registrar_evento(datos_form, usuario_email):
         raise Exception(resp_post.text)
         
     return numero_ficha
+
+
+def actualizar_desde_modal(id_registro, datos):
+    """
+    Actualiza campos editables del modal en Supabase (tabla registro_evento).
+    id_registro: id del registro en lista (o numero_ficha como respaldo).
+    Retorna (dict, codigo_http).
+    """
+    url, headers = get_supabase_headers()
+    patch = {}
+
+    if "destino" in datos:
+        patch["destino"] = datos["destino"]
+
+    if "observacion_medica" in datos or "observacion" in datos:
+        patch["observacion"] = datos.get("observacion_medica", datos.get("observacion"))
+
+    if "numero_acta_movimiento" in datos:
+        patch["numero_acta_movimiento"] = datos["numero_acta_movimiento"]
+
+    if datos.get("fecha"):
+        fecha = str(datos["fecha"]).strip()[:10]
+        patch["fecha"] = fecha if "T" in fecha else f"{fecha}T12:00:00"
+
+    if not patch:
+        return {"error": "No se recibieron campos para actualizar."}, 400
+
+    id_str = str(id_registro).strip()
+    filtros = [
+        f"id=eq.{requests.utils.quote(id_str)}",
+        f"numero_ficha=eq.{requests.utils.quote(id_str)}",
+    ]
+
+    ultimo_error = "Registro no encontrado"
+    for filtro in filtros:
+        resp = requests.patch(
+            f"{url}/rest/v1/registro_evento?{filtro}",
+            json=patch,
+            headers=headers,
+        )
+        if resp.status_code in (200, 204):
+            return {"success": True, "mensaje": "Registro actualizado con éxito"}, 200
+        ultimo_error = resp.text or ultimo_error
+
+    return {"error": f"No se pudo actualizar: {ultimo_error}"}, 400

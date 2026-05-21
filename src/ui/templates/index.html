@@ -17,7 +17,7 @@
 <!-- FORMULARIO -->
 <form action="/web/registrar" method="POST" class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 mb-8 shadow-xl">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        
+       
         <div class="lg:col-span-1 flex flex-col justify-end">
             <label class="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">Tipo de Evento</label>
             <select name="tipo_evento" id="tipo_evento" onchange="toggleFormulario()" class="bg-zinc-950 border border-zinc-700 p-3 rounded-lg text-sm focus:border-emerald-500 outline-none w-full text-white cursor-pointer appearance-none font-bold">
@@ -44,7 +44,7 @@
             <label class="text-xs text-orange-400 uppercase font-bold tracking-wider mb-1">🔍 N° Ficha del Paciente a Egresar</label>
             <input type="text" id="ficha_existente" name="numero_ficha_existente" placeholder="Ej: F-001-2026" class="bg-zinc-950 border border-orange-700 p-3 rounded-lg text-sm focus:border-orange-500 outline-none w-full">
         </div>
-        
+       
         <div class="lg:col-span-1 grid grid-cols-2 gap-4">
             <div class="col-span-1 flex flex-col justify-end">
                 <label class="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">Cant.</label>
@@ -58,14 +58,28 @@
 
         <div class="lg:col-span-1 flex flex-col justify-end">
             <label class="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">Categoría</label>
-            <input type="text" name="categoria_evento" placeholder="Ej: SAG Río Negro" class="bg-zinc-950 border border-zinc-700 p-3 rounded-lg text-sm outline-none w-full">
+            <input list="lista_categorias" name="categoria_evento" placeholder="Ej: SAG Río Negro" class="bg-zinc-950 border border-zinc-700 p-3 rounded-lg text-sm outline-none w-full focus:border-emerald-500">
+            <datalist id="lista_categorias">
+                <option value="SAG Puerto Montt">
+                <option value="SAG Puerto Varas">
+                <option value="SAG Osorno">
+                <option value="SAG Río Negro">
+                <option value="Particular">
+            </datalist>
         </div>
-        
+
         <div class="lg:col-span-1 flex flex-col justify-end">
             <label class="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">Destino</label>
-            <input type="text" name="destino" placeholder="Ej: Rehabilitación / Fallece" class="bg-zinc-950 border border-zinc-700 p-3 rounded-lg text-sm outline-none w-full">
+            <input list="lista_destinos" name="destino" placeholder="Ej: Rehabilitación / Fallece" class="bg-zinc-950 border border-zinc-700 p-3 rounded-lg text-sm outline-none w-full focus:border-emerald-500">
+            <datalist id="lista_destinos">
+                <option value="Rehabilitación">
+                <option value="Fallece">
+                <option value="Eutanasia">
+                <option value="Liberado">
+                <option value="Ingreso">
+            </datalist>
         </div>
-        
+       
         <div class="lg:col-span-2 flex flex-col justify-end">
             <label class="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">Observación Médica</label>
             <div class="flex gap-4">
@@ -78,14 +92,50 @@
 
 <!-- HISTORIAL -->
 <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 overflow-x-auto shadow-xl">
-    <h2 class="text-xl text-zinc-400 mb-4 border-b border-zinc-800 pb-2">Historial (Click para detalles)</h2>
+    <div class="flex flex-col xl:flex-row xl:items-center justify-between mb-4 border-b border-zinc-800 pb-4 gap-4">
+        <h2 class="text-xl text-zinc-400 font-semibold shrink-0">Historial <span class="text-sm font-normal text-zinc-500">(Click para detalles)</span></h2>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+                <input type="text" id="filtro_general" placeholder="Busca..." oninput="filtrarHistorial()" class="bg-zinc-800/50 border border-zinc-700 py-1.5 pl-4 pr-8 rounded-full text-sm text-white outline-none focus:border-emerald-500 w-40 md:w-48 placeholder-zinc-500 transition-all">
+                <svg class="absolute right-2.5 top-2 w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <input type="text" id="filtro_rango_fecha" placeholder="Filtro por fecha" oninput="filtrarHistorial()" class="bg-zinc-950 border border-zinc-700 py-1.5 px-4 rounded-full text-sm text-zinc-400 outline-none focus:border-emerald-500 placeholder-zinc-500 transition-all hover:bg-zinc-900 focus:bg-zinc-900">
+            <select id="filtro_especie" onchange="filtrarHistorial()" class="bg-zinc-950 border border-zinc-700 py-1.5 px-4 rounded-full text-sm text-zinc-400 outline-none focus:border-emerald-500 cursor-pointer appearance-none transition-all hover:bg-zinc-900 focus:bg-zinc-900">
+                <option value="">Filtro por especie</option>
+                <option value="LORO CHOROY">Loro Choroy</option>
+                <option value="BANDURRIA">Bandurria</option>
+                <option value="ZORRO CHILLA">Zorro Chilla</option>
+                <option value="QUELTEHUE">Queltehue</option>
+                <option value="MONITO DEL MONTE">Monito del Monte</option>
+                <option value="CACHAÑA">Cachaña</option>
+                <option value="LECHUZA">Lechuza</option>
+                <option value="PETREL PLATEADO">Petrel Plateado</option>
+                <option value="CHUNCHO">Chuncho</option>
+                <option value="ZORZAL">Zorzal</option>
+                <option value="GUIÑA">Guiña</option>
+                <option value="JOTE">Jote</option>
+                <option value="PUDÚ">Pudú</option>
+                <option value="TIUQUE">Tiuque</option>
+                <option value="CORMORAN">Cormorán</option>
+                <option value="CONCON">Concón</option>
+                <option value="CERNICALO">Cernícalo</option>
+                <option value="PEUCO">Peuco</option>
+            </select>
+            <select id="filtro_tipo" onchange="filtrarHistorial()" class="bg-zinc-950 border border-zinc-700 py-1.5 px-4 rounded-full text-sm text-zinc-400 outline-none focus:border-emerald-500 cursor-pointer appearance-none transition-all hover:bg-zinc-900 focus:bg-zinc-900">
+                <option value="">Filtro por tipo</option>
+                <option value="Ingreso">Ingreso</option>
+                <option value="Egreso">Egreso</option>
+            </select>
+        </div>
+    </div>
     <table class="w-full text-sm text-left">
         <thead class="text-zinc-500 uppercase border-b border-zinc-700 bg-zinc-950/50">
             <tr><th class="py-3 px-2">Ficha</th><th class="py-3 px-2">Fecha</th><th class="py-3 px-2">Tipo</th><th class="py-3 px-2">Especie</th><th class="py-3 px-2 text-center">Cant</th><th class="py-3 px-2 text-center">Resp.</th></tr>
         </thead>
         <tbody class="divide-y divide-zinc-800">
             {% for r in lista %}
-            <tr class="hover:bg-zinc-800 transition-colors cursor-pointer" onclick='abrirModal("{{ r.numero_ficha }}","{{ r.fecha[:10] if r.fecha else "" }}","{{ r.tipo_evento }}","{{ r.nombre_comun }}","{{ r.nombre_cientifico }}","{{ r.numero_acta_movimiento }}","{{ r.observacion }}","{{ r.destino }}","{{ r.doctor_email }}")'>
+            <tr class="hover:bg-zinc-800 transition-colors cursor-pointer" onclick='abrirModal("{{ r.numero_ficha }}","{{ r.fecha[:10] if r.fecha else "" }}","{{ r.tipo_evento }}","{{ r.nombre_comun }}","{{ r.nombre_cientifico }}","{{ r.numero_acta_movimiento }}","{{ r.observacion }}","{{ r.destino }}","{{ r.doctor_email }}","{{ r.id }}")'>
                 <td class="py-3 px-2 font-mono text-emerald-400 font-bold">{{ r.numero_ficha or '-' }}</td>
                 <td class="py-3 px-2 text-zinc-400">{{ r.fecha[:10] if r.fecha else '-' }}</td>
                 <td class="py-3 px-2">
@@ -103,49 +153,67 @@
     </table>
 </div>
 
-<!-- MODAL -->
-<div id="modal_ficha" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4 transition-opacity" onclick="cerrarModal(event)">
-    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md shadow-2xl relative" onclick="event.stopPropagation()">
-        <button onclick="cerrarModal(event)" class="absolute top-4 right-4 text-zinc-500 hover:text-white text-xl">✕</button>
-        <div class="flex items-center gap-3 mb-4 border-b border-zinc-800 pb-4">
-            <div class="bg-emerald-900/50 p-3 rounded-full border border-emerald-700/50"><span class="text-2xl">📋</span></div>
-            <div>
-                <h3 class="text-2xl font-bold text-white" id="modal_ficha_num">F-XXX-XXXX</h3>
-                <p class="text-sm font-mono" id="modal_tipo">Ingreso</p>
+<!-- MODAL FICHA: compacto; vista → Modificar → Guardar -->
+<div id="modal_ficha" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-3 sm:p-4 transition-opacity" onclick="cerrarModal(event)">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-xl w-full max-w-sm max-h-[90vh] flex flex-col shadow-2xl relative" onclick="event.stopPropagation()">
+        <button type="button" onclick="cerrarModal(event)" class="absolute top-2 right-2 z-10 text-zinc-500 hover:text-white text-lg leading-none px-1">✕</button>
+
+        <div class="flex items-center gap-2 px-4 pt-4 pb-2 border-b border-zinc-800 shrink-0">
+            <div class="bg-emerald-900/50 p-1.5 rounded-full border border-emerald-700/50 text-base leading-none">📋</div>
+            <div class="min-w-0 pr-6">
+                <h3 class="text-lg font-bold text-white truncate" id="modal_ficha_num">F-XXX-XXXX</h3>
+                <p class="text-xs font-mono" id="modal_tipo">Ingreso</p>
             </div>
         </div>
-        <div class="space-y-3 text-sm">
-            <div class="bg-zinc-950 p-3 rounded-lg border border-zinc-800">
-                <span class="text-zinc-500 block text-xs uppercase tracking-wide">Paciente</span>
-                <strong id="modal_comun" class="text-lg text-white">...</strong>
-                <p id="modal_cientifico" class="italic text-zinc-400">...</p>
+
+        <div class="overflow-y-auto px-4 py-2 space-y-2 text-xs">
+            <input type="hidden" id="edit_id">
+
+            <div class="bg-zinc-950 px-2 py-1.5 rounded-md border border-zinc-800">
+                <span class="text-zinc-500 text-[10px] uppercase tracking-wide">Paciente</span>
+                <strong id="modal_comun" class="block text-sm text-white leading-tight">...</strong>
+                <p id="modal_cientifico" class="text-[11px] italic text-zinc-400 leading-tight truncate">...</p>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-zinc-950 p-3 rounded-lg border border-zinc-800">
-                    <span class="text-zinc-500 block text-xs uppercase">Fecha</span>
-                    <span id="modal_fecha" class="text-white">...</span>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div class="bg-zinc-950 px-2 py-1.5 rounded-md border border-zinc-800">
+                    <span class="text-zinc-500 text-[10px] uppercase">Fecha</span>
+                    <input type="date" id="modal_fecha" class="bg-transparent text-white text-xs w-full border-none outline-none focus:ring-0 p-0 h-7" disabled>
                 </div>
-                <div class="bg-zinc-950 p-3 rounded-lg border border-zinc-800">
-                    <span class="text-zinc-500 block text-xs uppercase">N° Acta</span>
-                    <span id="modal_acta" class="text-white">...</span>
+                <div class="bg-zinc-950 px-2 py-1.5 rounded-md border border-zinc-800">
+                    <span class="text-zinc-500 text-[10px] uppercase">N° Acta</span>
+                    <input type="text" id="modal_acta" class="bg-transparent text-white text-xs w-full border-none outline-none focus:ring-0 p-0 h-7" disabled>
                 </div>
             </div>
-            <div class="bg-zinc-950 p-3 rounded-lg border border-zinc-800">
-                <span class="text-zinc-500 block text-xs uppercase">Destino / Categoría</span>
-                <span id="modal_destino" class="text-white">...</span>
+
+            <div class="bg-zinc-950 px-2 py-1.5 rounded-md border border-zinc-800">
+                <span class="text-zinc-500 text-[10px] uppercase">Destino</span>
+                <input type="text" id="modal_destino" class="bg-transparent text-white text-xs w-full border-none outline-none focus:ring-0 p-0 h-7" disabled>
             </div>
-            <div class="bg-zinc-950 p-3 rounded-lg border border-zinc-800">
-                <span class="text-zinc-500 block text-xs uppercase">Doctor Responsable</span>
-                <span id="modal_doc" class="text-emerald-400 font-bold">...</span>
+
+            <div class="bg-zinc-950 px-2 py-1.5 rounded-md border border-zinc-800 flex justify-between items-center gap-2">
+                <span class="text-zinc-500 text-[10px] uppercase shrink-0">Doctor responsable</span>
+                <span id="modal_doc" class="text-emerald-400 text-xs font-semibold truncate text-right">...</span>
             </div>
-            <div class="bg-zinc-950 p-3 rounded-lg border border-zinc-800">
-                <span class="text-zinc-500 block text-xs uppercase">Observaciones</span>
-                <p id="modal_obs" class="text-white mt-1">...</p>
+
+            <div class="bg-zinc-950 px-2 py-1.5 rounded-md border border-zinc-800">
+                <span class="text-zinc-500 text-[10px] uppercase">Observaciones</span>
+                <textarea id="modal_obs" rows="2" class="bg-transparent text-white text-xs w-full border-none outline-none mt-0.5 resize-none focus:ring-0 leading-snug max-h-16" disabled></textarea>
             </div>
         </div>
-        <button onclick="cerrarModal(event)" class="mt-6 w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2 rounded-lg transition-colors">Cerrar</button>
+
+        <div class="px-4 py-3 flex flex-col gap-1.5 border-t border-zinc-800 shrink-0">
+            <button id="btn-modal-modificar" type="button" onclick="activarModoEdicion(event)" class="w-full bg-amber-700 hover:bg-amber-600 text-white text-sm font-semibold py-1.5 rounded-md transition-colors">
+                Modificar
+            </button>
+            <button id="btn_guardar" type="button" onclick="guardarCambiosEdicion()" class="hidden w-full bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold py-1.5 rounded-md transition-colors">
+                Guardar cambios
+            </button>
+            <button type="button" onclick="cerrarModal(event)" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm py-1.5 rounded-md transition-colors">Cerrar</button>
+        </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -190,31 +258,177 @@
         }
     }
 
-    function abrirModal(ficha, fecha, tipo, comun, cientifico, acta, obs, destino, doc) {
+    // --- Modal ficha: permiso modificar_fichas (auth_service.py / seguridad.py) ---
+    const CAMPOS_EDITABLES = ['modal_fecha', 'modal_acta', 'modal_destino', 'modal_obs'];
+
+    function obtenerIdRegistro() {
+        const id = String(document.getElementById('edit_id').value || '').trim();
+        return id.length > 0 ? id : null;
+    }
+
+    async function apiPostJson(url, body) {
+        const res = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const texto = await res.text();
+        let data = {};
+        try {
+            data = texto ? JSON.parse(texto) : {};
+        } catch (e) {
+            const detalle = texto ? texto.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) : '';
+            throw new Error(detalle ? `HTTP ${res.status}: ${detalle}` : `HTTP ${res.status}: respuesta no válida del servidor`);
+        }
+        return { ok: res.ok, status: res.status, data };
+    }
+
+    function resetModoVista() {
+        CAMPOS_EDITABLES.forEach(id => {
+            const el = document.getElementById(id);
+            el.disabled = true;
+            el.classList.remove('border', 'border-emerald-600', 'rounded', 'px-1');
+        });
+        document.getElementById('btn_guardar').classList.add('hidden');
+        document.getElementById('btn-modal-modificar').classList.remove('hidden');
+    }
+
+    function habilitarModoEdicion() {
+        CAMPOS_EDITABLES.forEach(id => {
+            const el = document.getElementById(id);
+            el.disabled = false;
+            el.classList.add('border', 'border-emerald-600', 'rounded', 'px-1');
+        });
+        document.getElementById('btn-modal-modificar').classList.add('hidden');
+        document.getElementById('btn_guardar').classList.remove('hidden');
+    }
+
+    function abrirModal(ficha, fecha, tipo, comun, cientifico, acta, obs, destino, doc, idPaciente) {
+        document.getElementById('edit_id').value = idPaciente && idPaciente !== 'None' ? idPaciente : '';
         document.getElementById("modal_ficha_num").innerText = ficha && ficha !== 'None' ? ficha : 'Sin Ficha';
-        document.getElementById("modal_fecha").innerText = fecha && fecha !== 'None' ? fecha : '-';
-        
+        document.getElementById("modal_fecha").value = fecha && fecha !== 'None' ? fecha : '';
+
         const tipoEl = document.getElementById("modal_tipo");
         tipoEl.innerText = tipo;
         tipoEl.className = tipo === "Ingreso" ? "text-emerald-400 text-sm font-mono" : "text-orange-400 text-sm font-mono";
 
         document.getElementById("modal_comun").innerText = comun && comun !== 'None' ? comun : '-';
         document.getElementById("modal_cientifico").innerText = cientifico && cientifico !== 'None' ? cientifico : '-';
-        document.getElementById("modal_acta").innerText = acta && acta !== 'None' ? acta : '-';
-        document.getElementById("modal_obs").innerText = obs && obs !== 'None' ? obs : 'Ninguna observación registrada.';
-        document.getElementById("modal_destino").innerText = destino && destino !== 'None' ? destino : '-';
+        document.getElementById("modal_acta").value = acta && acta !== 'None' ? acta : '';
         document.getElementById("modal_doc").innerText = doc && doc !== 'None' ? doc.split('@')[0] : '-';
+
+        document.getElementById("modal_destino").value = destino && destino !== 'None' ? destino : '';
+        document.getElementById("modal_obs").value = obs && obs !== 'None' ? obs : '';
+
+        resetModoVista();
 
         const modal = document.getElementById("modal_ficha");
         modal.classList.remove("hidden");
         modal.classList.add("flex");
     }
 
+    function activarModoEdicion(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        const id = obtenerIdRegistro();
+        if (id === null) {
+            alert('No se pudo identificar el registro.');
+            return;
+        }
+
+        apiPostJson(`/api/fauna/seguridad/modificar/${encodeURIComponent(id)}`, {})
+            .then(({ ok, data }) => {
+                if (ok && data.autorizado) {
+                    habilitarModoEdicion();
+                    return;
+                }
+                alert(data.mensaje || 'No tiene permisos para modificar este registro.');
+            })
+            .catch(err => alert(err.message || 'Hubo un error al verificar los permisos del usuario.'));
+    }
+
+    async function guardarCambiosEdicion() {
+        const id = obtenerIdRegistro();
+        if (id === null) {
+            alert('No se pudo identificar el registro.');
+            return;
+        }
+
+        const datosModificados = {
+            fecha: document.getElementById('modal_fecha').value,
+            numero_acta_movimiento: document.getElementById('modal_acta').value,
+            destino: document.getElementById('modal_destino').value,
+            observacion_medica: document.getElementById('modal_obs').value,
+            observacion: document.getElementById('modal_obs').value
+        };
+
+        try {
+            // Ruta en seguridad.py (mismo blueprint que /seguridad/modificar)
+            const { ok, data } = await apiPostJson(`/api/fauna/seguridad/actualizar/${encodeURIComponent(id)}`, datosModificados);
+            if (ok && data.success) {
+                alert(data.mensaje || 'Cambios guardados con éxito.');
+                cerrarModal();
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || data.mensaje || 'No se pudo guardar.'));
+            }
+        } catch (err) {
+            alert('Error al guardar: ' + err.message);
+        }
+    }
+
     function cerrarModal(e) {
-        if(e) e.preventDefault();
+        if (e) e.preventDefault();
         const modal = document.getElementById("modal_ficha");
         modal.classList.add("hidden");
         modal.classList.remove("flex");
+        resetModoVista();
+    }
+
+    function filtrarHistorial() {
+        const textoGeneral = document.getElementById('filtro_general').value.toLowerCase();
+        const textoFecha = document.getElementById('filtro_rango_fecha').value.toLowerCase();
+        const filtroEspecie = document.getElementById('filtro_especie').value.toLowerCase();
+        const filtroTipo = document.getElementById('filtro_tipo').value.toLowerCase();
+
+        const filas = document.querySelectorAll('tbody tr.cursor-pointer');
+        let visibles = 0;
+
+        filas.forEach(fila => {
+            const ficha = fila.children[0].textContent.toLowerCase();
+            const fecha = fila.children[1].textContent.toLowerCase();
+            const tipo = fila.children[2].textContent.toLowerCase();
+            const especieCompleta = fila.children[3].textContent.toLowerCase();
+            const resp = fila.children[5].textContent.toLowerCase();
+            const textoFila = ficha + " " + fecha + " " + tipo + " " + especieCompleta + " " + resp;
+
+            const coincideGeneral = textoGeneral === '' || textoFila.includes(textoGeneral);
+            const coincideFecha = textoFecha === '' || fecha.includes(textoFecha);
+            const coincideEspecie = filtroEspecie === '' || especieCompleta.includes(filtroEspecie);
+            const coincideTipo = filtroTipo === '' || tipo.includes(filtroTipo);
+
+            if (coincideGeneral && coincideFecha && coincideEspecie && coincideTipo) {
+                fila.style.display = '';
+                visibles++;
+            } else {
+                fila.style.display = 'none';
+            }
+        });
+
+        let filaVacia = document.getElementById('fila_no_registros');
+        if (!filaVacia) {
+            filaVacia = document.createElement('tr');
+            filaVacia.id = 'fila_no_registros';
+            filaVacia.innerHTML = "<td colspan='6' class='text-center text-zinc-500 py-8 italic'>No se encontraron registros que coincidan con los filtros.</td>";
+            document.querySelector('tbody').appendChild(filaVacia);
+        }
+
+        filaVacia.style.display = visibles === 0 ? '' : 'none';
     }
 </script>
 {% endblock %}
+
+

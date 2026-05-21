@@ -1,7 +1,6 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-db = SQLAlchemy()
+from src.database.connection import db  # única instancia SQLAlchemy (ver connection.py)
 
 class Paciente(db.Model):
     __tablename__ = 'pacientes'
