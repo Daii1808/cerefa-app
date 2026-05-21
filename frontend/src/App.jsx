@@ -7,7 +7,7 @@ function App() {
     'PATO JERGÓN': { cientifico: 'Anas georgica', categoria: 'Aves', destino: 'Rehabilitación' },
     'GARZA GRANDE': { cientifico: 'Ardea alba', categoria: 'Aves', destino: 'Clínica' },
     'BANDURRIA': { cientifico: 'Theristicus melanopis', categoria: 'Aves', destino: 'Rehabilitación' },
-    'PEUCO': { cientifico: 'Parabuteo unicinctus', categoria: 'Rapaces', destino: 'Liberación' },
+    'PEUCO': { cientifico: 'Parabuteo unicinctus', categoria: 'Rapaces', destino: 'Liberado' },
   };
 
   // Estados de Autenticación
@@ -250,7 +250,7 @@ function App() {
   const totalEgresos = registros.filter(r => r.tipo_evento === 'Egreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
   const pacientesActivos = Math.max(0, totalIngresos - totalEgresos);
   const tasaExito = totalEgresos > 0 
-    ? Math.round((registros.filter(r => r.tipo_evento === 'Egreso' && r.destino === 'Liberación').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
+    ? Math.round((registros.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Liberado' || r.destino === 'Liberación')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
     : 0;
 
   return (
@@ -521,26 +521,22 @@ function App() {
                     {/* Destino */}
                     <div className="grupo-campo">
                       <label>Destino o Estado</label>
-                      {tipoEvento === 'Ingreso' ? (
-                        <select 
-                          value={destino} 
-                          onChange={(e) => setDestino(e.target.value)} 
-                          className="select-cerefa"
-                        >
-                          <option value="Rehabilitación">Rehabilitación</option>
-                          <option value="Clínica">Clínica</option>
-                        </select>
-                      ) : (
-                        <select 
-                          value={destino} 
-                          onChange={(e) => setDestino(e.target.value)} 
-                          className="select-cerefa"
-                        >
-                          <option value="Liberación">Liberación (Éxito)</option>
-                          <option value="Clínica">Clínica de Apoyo</option>
-                          <option value="Fallecido">Fallecido / Eutanasia</option>
-                        </select>
-                      )}
+                      <input 
+                        list="lista_destinos"
+                        value={destino} 
+                        onChange={(e) => setDestino(e.target.value)} 
+                        className="input-cerefa"
+                        placeholder="Ej: Rehabilitación / Liberado / Fallece"
+                        required
+                      />
+                      <datalist id="lista_destinos">
+                        <option value="Rehabilitación" />
+                        <option value="Clínica" />
+                        <option value="Ingreso" />
+                        <option value="Liberado" />
+                        <option value="Fallece" />
+                        <option value="Eutanasia" />
+                      </datalist>
                     </div>
 
                     {/* Número de Acta */}
@@ -735,12 +731,12 @@ function App() {
                             <span>Clínica de Apoyo / Traspaso</span>
                             <span>
                               {totalEgresos > 0 
-                                ? Math.round((registros.filter(r => r.tipo_evento === 'Egreso' && r.destino === 'Clínica').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
+                                ? Math.round((registros.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Clínica' || r.destino === 'Clínica de Apoyo' || r.destino === 'Clinica')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill info" style={{ width: `${totalEgresos > 0 ? (registros.filter(r => r.tipo_evento === 'Egreso' && r.destino === 'Clínica').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill info" style={{ width: `${totalEgresos > 0 ? (registros.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Clínica' || r.destino === 'Clínica de Apoyo' || r.destino === 'Clinica')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
 
@@ -749,12 +745,12 @@ function App() {
                             <span>Fallecido / Deceso / Eutanasia</span>
                             <span>
                               {totalEgresos > 0 
-                                ? Math.round((registros.filter(r => r.tipo_evento === 'Egreso' && r.destino === 'Fallecido').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
+                                ? Math.round((registros.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Fallece' || r.destino === 'Eutanasia' || r.destino === 'Fallecido')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill warning" style={{ width: `${totalEgresos > 0 ? (registros.filter(r => r.tipo_evento === 'Egreso' && r.destino === 'Fallecido').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill warning" style={{ width: `${totalEgresos > 0 ? (registros.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Fallece' || r.destino === 'Eutanasia' || r.destino === 'Fallecido')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
                       </div>
