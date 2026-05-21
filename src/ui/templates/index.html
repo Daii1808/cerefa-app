@@ -78,7 +78,44 @@
 
 <!-- HISTORIAL -->
 <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 overflow-x-auto shadow-xl">
-    <h2 class="text-xl text-zinc-400 mb-4 border-b border-zinc-800 pb-2">Historial (Click para detalles)</h2>
+    <div class="flex flex-col xl:flex-row xl:items-center justify-between mb-4 border-b border-zinc-800 pb-4 gap-4">
+        <h2 class="text-xl text-zinc-400 font-semibold shrink-0">Historial <span class="text-sm font-normal text-zinc-500">(Click para detalles)</span></h2>
+        
+        <!-- Filtros -->
+        <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+                <input type="text" id="filtro_general" placeholder="Busca..." oninput="filtrarHistorial()" class="bg-zinc-800/50 border border-zinc-700 py-1.5 pl-4 pr-8 rounded-full text-sm text-white outline-none focus:border-emerald-500 w-40 md:w-48 placeholder-zinc-500 transition-all">
+                <svg class="absolute right-2.5 top-2 w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <input type="text" id="filtro_rango_fecha" placeholder="Filtro por Fecha (rango)" oninput="filtrarHistorial()" class="bg-zinc-950 border border-zinc-700 py-1.5 px-4 rounded-full text-sm text-zinc-400 outline-none focus:border-emerald-500 placeholder-zinc-500 transition-all hover:bg-zinc-900 focus:bg-zinc-900">
+            <select id="filtro_especie" onchange="filtrarHistorial()" class="bg-zinc-950 border border-zinc-700 py-1.5 px-4 rounded-full text-sm text-zinc-400 outline-none focus:border-emerald-500 cursor-pointer appearance-none transition-all hover:bg-zinc-900 focus:bg-zinc-900">
+                <option value="">Filtro por Especie</option>
+                <option value="LORO CHOROY">Loro Choroy</option>
+                <option value="BANDURRIA">Bandurria</option>
+                <option value="ZORRO CHILLA">Zorro Chilla</option>
+                <option value="QUELTEHUE">Queltehue</option>
+                <option value="MONITO DEL MONTE">Monito del Monte</option>
+                <option value="CACHAÑA">Cachaña</option>
+                <option value="LECHUZA">Lechuza</option>
+                <option value="PETREL PLATEADO">Petrel Plateado</option>
+                <option value="CHUNCHO">Chuncho</option>
+                <option value="ZORZAL">Zorzal</option>
+                <option value="GUIÑA">Guiña</option>
+                <option value="JOTE">Jote</option>
+                <option value="PUDÚ">Pudú</option>
+                <option value="TIUQUE">Tiuque</option>
+                <option value="CORMORAN">Cormorán</option>
+                <option value="CONCON">Concón</option>
+                <option value="CERNICALO">Cernícalo</option>
+                <option value="PEUCO">Peuco</option>
+            </select>
+            <select id="filtro_tipo" onchange="filtrarHistorial()" class="bg-zinc-950 border border-zinc-700 py-1.5 px-4 rounded-full text-sm text-zinc-400 outline-none focus:border-emerald-500 cursor-pointer appearance-none transition-all hover:bg-zinc-900 focus:bg-zinc-900">
+                <option value="">Filtro por Tipo de Evento (Ingreso/Egreso)</option>
+                <option value="Ingreso">Ingreso</option>
+                <option value="Egreso">Egreso</option>
+            </select>
+        </div>
+    </div>
     <table class="w-full text-sm text-left">
         <thead class="text-zinc-500 uppercase border-b border-zinc-700 bg-zinc-950/50">
             <tr><th class="py-3 px-2">Ficha</th><th class="py-3 px-2">Fecha</th><th class="py-3 px-2">Tipo</th><th class="py-3 px-2">Especie</th><th class="py-3 px-2 text-center">Cant</th><th class="py-3 px-2 text-center">Resp.</th></tr>
@@ -215,6 +252,52 @@
         const modal = document.getElementById("modal_ficha");
         modal.classList.add("hidden");
         modal.classList.remove("flex");
+    }
+
+    function filtrarHistorial() {
+        const textoGeneral = document.getElementById('filtro_general').value.toLowerCase();
+        const textoFecha = document.getElementById('filtro_rango_fecha').value.toLowerCase();
+        const filtroEspecie = document.getElementById('filtro_especie').value.toLowerCase();
+        const filtroTipo = document.getElementById('filtro_tipo').value.toLowerCase();
+
+        const filas = document.querySelectorAll('tbody tr.cursor-pointer');
+        let visibles = 0;
+
+        filas.forEach(fila => {
+            const ficha = fila.children[0].textContent.toLowerCase();
+            const fecha = fila.children[1].textContent.toLowerCase();
+            const tipo = fila.children[2].textContent.toLowerCase();
+            const especieCompleta = fila.children[3].textContent.toLowerCase();
+            const resp = fila.children[5].textContent.toLowerCase();
+
+            const textoFila = ficha + " " + fecha + " " + tipo + " " + especieCompleta + " " + resp;
+
+            const coincideGeneral = textoGeneral === '' || textoFila.includes(textoGeneral);
+            const coincideFecha = textoFecha === '' || fecha.includes(textoFecha);
+            const coincideEspecie = filtroEspecie === '' || especieCompleta.includes(filtroEspecie);
+            const coincideTipo = filtroTipo === '' || tipo.includes(filtroTipo);
+
+            if (coincideGeneral && coincideFecha && coincideEspecie && coincideTipo) {
+                fila.style.display = '';
+                visibles++;
+            } else {
+                fila.style.display = 'none';
+            }
+        });
+
+        let filaVacia = document.getElementById('fila_no_registros');
+        if (!filaVacia) {
+            filaVacia = document.createElement('tr');
+            filaVacia.id = 'fila_no_registros';
+            filaVacia.innerHTML = "<td colspan='6' class='text-center text-zinc-500 py-8 italic'>No se encontraron registros que coincidan con los filtros.</td>";
+            document.querySelector('tbody').appendChild(filaVacia);
+        }
+        
+        if (visibles === 0) {
+            filaVacia.style.display = '';
+        } else {
+            filaVacia.style.display = 'none';
+        }
     }
 </script>
 {% endblock %}
