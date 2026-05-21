@@ -95,8 +95,20 @@
     <div class="flex flex-col xl:flex-row xl:items-center justify-between mb-4 border-b border-zinc-800 pb-4 gap-4">
         <h2 class="text-xl text-zinc-400 font-semibold shrink-0">Historial <span class="text-sm font-normal text-zinc-500">(Click para detalles)</span></h2>
         
+        <!-- Botón de Descarga PDF -->
+        <button onclick="descargarPDF()" type="button" class="bg-blue-700 hover:bg-blue-600 text-white text-sm font-bold py-1.5 px-4 rounded-full shadow transition-colors flex items-center gap-2 border border-blue-500 mr-2">
+            📄 Descargar PDF
+        </button>
+
         <!-- Filtros -->
         <div class="flex flex-wrap items-center gap-2">
+            <!-- Filtro Semestre -->
+            <select id="filtro_semestre" onchange="filtrarHistorial()" class="bg-zinc-950 border border-zinc-700 py-1.5 px-4 rounded-full text-sm text-zinc-400 outline-none focus:border-emerald-500 cursor-pointer appearance-none transition-all hover:bg-zinc-900 focus:bg-zinc-900">
+                <option value="">Todos los Semestres</option>
+                <option value="S1">1° Semestre (Ene - Jun)</option>
+                <option value="S2">2° Semestre (Jul - Dic)</option>
+            </select>
+            
             <div class="relative">
                 <input type="text" id="filtro_general" placeholder="Busca..." oninput="filtrarHistorial()" class="bg-zinc-800/50 border border-zinc-700 py-1.5 pl-4 pr-8 rounded-full text-sm text-white outline-none focus:border-emerald-500 w-40 md:w-48 placeholder-zinc-500 transition-all">
                 <svg class="absolute right-2.5 top-2 w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -200,7 +212,82 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- === LÓGICA DE GENERACIÓN DE PDF === -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
 <script>
+    // Inyectamos los datos completos desde el backend para el reporte PDF
+    const registrosCompletos = {{ lista | tojson | safe }};
+
+    function descargarPDF() {
+        const { jsPDF } = window.jspdf;
+        // Crear documento horizontal (landscape) porque son muchas columnas
+        const doc = new jsPDF('l', 'pt', 'a4'); 
+        
+        // Determinar si hay un filtro de semestre aplicado
+        const filtroSemestre = document.getElementById('filtro_semestre').value;
+        const añoActual = new Date().getFullYear();
+        let tituloPDF = "Reporte de Registros CEREFA";
+        if (filtroSemestre === 'S1') tituloPDF += ` - 1° Semestre ${añoActual}`;
+        if (filtroSemestre === 'S2') tituloPDF += ` - 2° Semestre ${añoActual}`;
+
+        // Configurar título
+        doc.setFontSize(16);
+        doc.text(tituloPDF, 40, 40);
+
+        // Definir columnas exactamente como en el archivo Excel 'prueba.xlsx'
+        const columnas = [
+            "FECHA", "Nº ficha", "Nombre comun", "Nombre científico", 
+            "Nº Acta", "Cant.", "Tipo de evento", "Categoría", 
+            "Saldo anterior", "Saldo actual", "Destino", "Observaciones"
+        ];
+
+        // Obtener solo las fichas que están visibles tras aplicar los filtros
+        const filasVisibles = Array.from(document.querySelectorAll('tbody tr.cursor-pointer')).filter(tr => tr.style.display !== 'none');
+        const fichasVisibles = filasVisibles.map(tr => tr.children[0].textContent.trim());
+
+        const datosImprimir = registrosCompletos
+            .filter(r => fichasVisibles.includes(r.numero_ficha))
+            .map(r => {
+                const fechaCorta = r.fecha ? r.fecha.substring(0, 10) : '';
+                return [
+                    fechaCorta,
+                    r.numero_ficha || '',
+                    r.nombre_comun || '',
+                    r.nombre_cientifico || '',
+                    r.numero_acta_movimiento || '',
+                    r.numero_ejemplar || '1',
+                    r.tipo_evento || '',
+                    r.categoria_evento || '',
+                    r.saldo_anterior !== null ? r.saldo_anterior : '',
+                    r.saldo_actual !== null ? r.saldo_actual : '',
+                    r.destino || '',
+                    r.observacion || ''
+                ];
+            });
+
+        if (datosImprimir.length === 0) {
+            alert("No hay registros para exportar con los filtros actuales.");
+            return;
+        }
+
+        // Generar tabla PDF
+        doc.autoTable({
+            head: [columnas],
+            body: datosImprimir,
+            startY: 60,
+            styles: { fontSize: 8, cellPadding: 3 },
+            headStyles: { fillColor: [6, 78, 59] }, // bg-emerald-900 para combinar con el diseño
+            theme: 'grid'
+        });
+
+        // Descargar archivo con nombre dinámico
+        const nombreArchivo = `CEREFA_Reporte_${filtroSemestre ? filtroSemestre + '_' : ''}${añoActual}.pdf`;
+        doc.save(nombreArchivo);
+    }
+    // ===================================
+
     function toggleFormulario() {
         const val = document.getElementById('tipo_evento').value;
         const secIngreso = document.getElementById("seccion_ingreso");
@@ -291,7 +378,21 @@
             const coincideEspecie = filtroEspecie === '' || especieCompleta.includes(filtroEspecie);
             const coincideTipo = filtroTipo === '' || tipo.includes(filtroTipo);
 
-            if (coincideGeneral && coincideFecha && coincideEspecie && coincideTipo) {
+            // === FILTRO DE SEMESTRE ===
+            const filtroSemestre = document.getElementById('filtro_semestre').value;
+            let coincideSemestre = true;
+            if (filtroSemestre !== '' && fecha !== '-') {
+                // Asumimos formato AAAA-MM-DD
+                const mes = parseInt(fecha.split('-')[1], 10);
+                if (filtroSemestre === 'S1') {
+                    coincideSemestre = (mes >= 1 && mes <= 6); // Enero a Junio
+                } else if (filtroSemestre === 'S2') {
+                    coincideSemestre = (mes >= 7 && mes <= 12); // Julio a Diciembre
+                }
+            }
+            // ==========================
+
+            if (coincideGeneral && coincideFecha && coincideEspecie && coincideTipo && coincideSemestre) {
                 fila.style.display = '';
                 visibles++;
             } else {
