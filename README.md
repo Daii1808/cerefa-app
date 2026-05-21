@@ -58,3 +58,15 @@ Haz clic en el botón azul Commit (Confirmar) y luego en Sync Changes (Sincroniz
 ---
 
 Pégalo, guarda con `Ctrl + S`, hazle tu último **Commit** y **Sync Changes** desde las tres pelotit
+
+---
+
+## 🎨 Frontend (React + Vite)
+El frontend está integrado en la misma raíz del repositorio. Para trabajar en la interfaz:
+
+1. **Instalar dependencias:**
+   Asegúrate de tener instalado [Node.js](https://nodejs.org/). En la raíz del proyecto, ejecuta:
+   ```bash
+   npm install
+
+   
