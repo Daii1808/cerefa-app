@@ -10,6 +10,22 @@ function App() {
     'GARZA GRANDE': { cientifico: 'Ardea alba', categoria: 'Aves', destino: 'Clínica' },
     'BANDURRIA': { cientifico: 'Theristicus melanopis', categoria: 'Aves', destino: 'Rehabilitación' },
     'PEUCO': { cientifico: 'Parabuteo unicinctus', categoria: 'Rapaces', destino: 'Liberado' },
+    'LORO CHOROY': { cientifico: 'Enicognathus leptorhynchus', categoria: 'Aves', destino: 'Rehabilitación' },
+    'ZORRO CHILLA': { cientifico: 'Lycalopex griseus', categoria: 'Mamíferos', destino: 'Rehabilitación' },
+    'QUELTEHUE': { cientifico: 'Vanellus chilensis', categoria: 'Aves', destino: 'Rehabilitación' },
+    'MONITO DEL MONTE': { cientifico: 'Dromiciops gliroides', categoria: 'Mamíferos', destino: 'Rehabilitación' },
+    'CACHAÑA': { cientifico: 'Enicognathus ferrugineus', categoria: 'Aves', destino: 'Rehabilitación' },
+    'LECHUZA': { cientifico: 'Tyto alba', categoria: 'Rapaces', destino: 'Rehabilitación' },
+    'PETREL PLATEADO': { cientifico: 'Fulmarus glacialoides', categoria: 'Aves', destino: 'Rehabilitación' },
+    'CHUNCHO': { cientifico: 'Glaucidium nana', categoria: 'Rapaces', destino: 'Rehabilitación' },
+    'ZORZAL': { cientifico: 'Turdus falcklandii', categoria: 'Aves', destino: 'Rehabilitación' },
+    'GUIÑA': { cientifico: 'Leopardus guigna', categoria: 'Mamíferos', destino: 'Rehabilitación' },
+    'JOTE': { cientifico: 'Coragyps atratus', categoria: 'Aves', destino: 'Rehabilitación' },
+    'PUDÚ': { cientifico: 'Pudu puda', categoria: 'Mamíferos', destino: 'Rehabilitación' },
+    'TIUQUE': { cientifico: 'Milvago chimango', categoria: 'Rapaces', destino: 'Rehabilitación' },
+    'CORMORAN': { cientifico: 'Phalacrocorax', categoria: 'Aves', destino: 'Rehabilitación' },
+    'CONCON': { cientifico: 'Strix rufipes', categoria: 'Rapaces', destino: 'Rehabilitación' },
+    'CERNICALO': { cientifico: 'Falco sparverius', categoria: 'Rapaces', destino: 'Rehabilitación' }
   };
 
   // Estados de Autenticación
@@ -46,7 +62,7 @@ function App() {
   const [nombreCientifico, setNombreCientifico] = useState('');
   const [cantidad, setCantidad] = useState(1);
   const [observacion, setObservacion] = useState('');
-  const [categoriaEvento, setCategoriaEvento] = useState('SAG'); // 'SAG', 'Particular', 'Rescate', 'Entrega Voluntaria'
+  const [categoriaEvento, setCategoriaEvento] = useState(''); // ej. 'SAG Puerto Montt'
   const [destino, setDestino] = useState('Rehabilitación'); // 'Rehabilitación', 'Clínica', 'Liberación', 'Fallecido'
   const [numeroActa, setNumeroActa] = useState('');
   const [numeroFichaSeleccionada, setNumeroFichaSeleccionada] = useState(''); // Para Egresos
@@ -500,7 +516,8 @@ function App() {
             </nav>
 
             {/* Métricas Rápidas (Superior) */}
-            <section className="metricas-grid">
+            {activeTab === 'metricas' && (
+              <section className="metricas-grid animate-fade" style={{ marginBottom: '20px' }}>
               <div className="card-metrica primary-border">
                 <div className="icon-wrapper icon-primary">📥</div>
                 <div className="metrica-info">
@@ -532,7 +549,8 @@ function App() {
                   <div className="metrica-valor">{cargandoDatos ? '...' : `${tasaExito}%`}</div>
                 </div>
               </div>
-            </section>
+              </section>
+            )}
 
             {/* PESTAÑA 1: REGISTRO DE EVENTOS */}
             {activeTab === 'registro' && (
@@ -587,17 +605,21 @@ function App() {
                     <div className="grupo-campo">
                       <label>Especie (Nombre Común)</label>
                       {tipoEvento === 'Ingreso' ? (
-                        <select 
-                          value={nombreComun} 
-                          onChange={(e) => setNombreComun(e.target.value)} 
-                          className="select-cerefa"
-                          required
-                        >
-                          <option value="">-- Selecciona --</option>
-                          {Object.keys(diccionarioAnimales).map(animal => (
-                            <option key={animal} value={animal}>{animal}</option>
-                          ))}
-                        </select>
+                        <>
+                          <input 
+                            list="lista_especies"
+                            value={nombreComun} 
+                            onChange={(e) => setNombreComun(e.target.value.toUpperCase())} 
+                            className="input-cerefa"
+                            placeholder="Selecciona o escribe..."
+                            required
+                          />
+                          <datalist id="lista_especies">
+                            {Object.keys(diccionarioAnimales).map(animal => (
+                              <option key={animal} value={animal} />
+                            ))}
+                          </datalist>
+                        </>
                       ) : (
                         <input 
                           type="text" 
@@ -638,16 +660,25 @@ function App() {
                     <div className="grupo-campo">
                       <label>Categoría del Evento</label>
                       {tipoEvento === 'Ingreso' ? (
-                        <select 
-                          value={categoriaEvento} 
-                          onChange={(e) => setCategoriaEvento(e.target.value)} 
-                          className="select-cerefa"
-                        >
-                          <option value="SAG">SAG</option>
-                          <option value="Particular">Particular</option>
-                          <option value="Rescate">Rescate CEREFA</option>
-                          <option value="Entrega Voluntaria">Entrega Voluntaria</option>
-                        </select>
+                        <>
+                          <input 
+                            list="lista_categorias"
+                            value={categoriaEvento} 
+                            onChange={(e) => setCategoriaEvento(e.target.value)} 
+                            className="input-cerefa"
+                            placeholder="Ej: SAG Río Negro"
+                            required
+                          />
+                          <datalist id="lista_categorias">
+                            <option value="SAG Puerto Montt" />
+                            <option value="SAG Puerto Varas" />
+                            <option value="SAG Osorno" />
+                            <option value="SAG Río Negro" />
+                            <option value="Particular" />
+                            <option value="Rescate CEREFA" />
+                            <option value="Entrega Voluntaria" />
+                          </datalist>
+                        </>
                       ) : (
                         <input 
                           type="text" 
