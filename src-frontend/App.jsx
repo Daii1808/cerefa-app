@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { guardarEvento, obtenerEventos, verificarMedico, actualizarEvento } from './supabaseService';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import logoCerefa from './assets/logo.jpg';
 
 function App() {
@@ -285,55 +285,76 @@ function App() {
   });
 
   const descargarPDF = () => {
-    const doc = new jsPDF('l', 'pt', 'a4');
-    const añoActual = new Date().getFullYear();
-    let tituloPDF = "Reporte de Registros CEREFA";
-    if (filtroSemestre === 'S1') tituloPDF += ` - 1° Semestre ${añoActual}`;
-    if (filtroSemestre === 'S2') tituloPDF += ` - 2° Semestre ${añoActual}`;
+    try {
+      console.log("Iniciando descargarPDF...");
+      const doc = new jsPDF('l', 'pt', 'a4');
+      const añoActual = new Date().getFullYear();
+      let tituloPDF = "Reporte de Registros CEREFA";
+      if (filtroSemestre === 'S1') tituloPDF += ` - 1° Semestre ${añoActual}`;
+      if (filtroSemestre === 'S2') tituloPDF += ` - 2° Semestre ${añoActual}`;
 
-    doc.setFontSize(16);
-    doc.text(tituloPDF, 40, 40);
+      doc.setFontSize(16);
+      doc.text(tituloPDF, 40, 40);
 
-    const columnas = [
-      "FECHA", "Nº ficha", "Nombre comun", "Nombre científico", 
-      "Nº Acta", "Cant.", "Tipo de evento", "Categoría", 
-      "Saldo anterior", "Saldo actual", "Destino", "Observaciones"
-    ];
-
-    const datosImprimir = registrosFiltrados.map(r => {
-      const fechaCorta = r.fecha ? r.fecha.substring(0, 10) : '';
-      return [
-        fechaCorta,
-        r.numero_ficha || '',
-        r.nombre_comun || '',
-        r.nombre_cientifico || '',
-        r.numero_acta_movimiento || '',
-        r.numero_ejemplar || '1',
-        r.tipo_evento || '',
-        r.categoria_evento || '',
-        r.saldo_anterior !== null ? r.saldo_anterior : '',
-        r.saldo_actual !== null ? r.saldo_actual : '',
-        r.destino || '',
-        r.observacion || ''
+      const columnas = [
+        "FECHA", "Nº ficha", "Nombre comun", "Nombre científico", 
+        "Nº Acta", "Cant.", "Tipo de evento", "Categoría", 
+        "Saldo anterior", "Saldo actual", "Destino", "Observaciones"
       ];
-    });
 
-    if (datosImprimir.length === 0) {
-      alert("No hay registros para exportar con los filtros actuales.");
-      return;
+      const datosImprimir = registrosFiltrados.map(r => {
+        const fechaCorta = r.fecha ? r.fecha.substring(0, 10) : '';
+        return [
+          fechaCorta,
+          r.numero_ficha || '',
+          r.nombre_comun || '',
+          r.nombre_cientifico || '',
+          r.numero_acta_movimiento || '',
+          r.numero_ejemplar || '1',
+          r.tipo_evento || '',
+          r.categoria_evento || '',
+          r.saldo_anterior !== null ? r.saldo_anterior : '',
+          r.saldo_actual !== null ? r.saldo_actual : '',
+          r.destino || '',
+          r.observacion || ''
+        ];
+      });
+
+      if (datosImprimir.length === 0) {
+        alert("No hay registros para exportar con los filtros actuales.");
+        return;
+      }
+
+      const makeTable = typeof autoTable === 'function' ? autoTable : (autoTable && autoTable.default ? autoTable.default : null);
+      if (makeTable) {
+        makeTable(doc, {
+          head: [columnas],
+          body: datosImprimir,
+          startY: 60,
+          styles: { fontSize: 8, cellPadding: 3 },
+          headStyles: { fillColor: [6, 78, 59] },
+          theme: 'grid'
+        });
+      } else if (typeof doc.autoTable === 'function') {
+        doc.autoTable({
+          head: [columnas],
+          body: datosImprimir,
+          startY: 60,
+          styles: { fontSize: 8, cellPadding: 3 },
+          headStyles: { fillColor: [6, 78, 59] },
+          theme: 'grid'
+        });
+      } else {
+        throw new Error("autoTable module is an object but doesn't have a default function: " + JSON.stringify(autoTable));
+      }
+
+      const nombreArchivo = `CEREFA_Reporte_${filtroSemestre ? filtroSemestre + '_' : ''}${añoActual}.pdf`;
+      doc.save(nombreArchivo);
+      console.log("PDF generado con éxito:", nombreArchivo);
+    } catch (error) {
+      console.error("Error al generar el PDF:", error);
+      alert("Error al generar el PDF: " + error.message);
     }
-
-    doc.autoTable({
-      head: [columnas],
-      body: datosImprimir,
-      startY: 60,
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [6, 78, 59] },
-      theme: 'grid'
-    });
-
-    const nombreArchivo = `CEREFA_Reporte_${filtroSemestre ? filtroSemestre + '_' : ''}${añoActual}.pdf`;
-    doc.save(nombreArchivo);
   };
 
   const abrirModal = (registro) => {
