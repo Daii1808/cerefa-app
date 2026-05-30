@@ -304,25 +304,65 @@
         const registrosFiltradosObj = registrosCompletos.filter(r => fichasVisibles.includes(r.numero_ficha));
         const totalIngresosPDF = registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
         const totalEgresosPDF = registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
-        const tasaExitoPDF = totalEgresosPDF > 0 
-            ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Liberado' || r.destino === 'Liberación' || r.destino === 'Liberacion')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) 
-            : 0;
+        
+        const libPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Liberado' || r.destino === 'Liberación' || r.destino === 'Liberacion')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
+        const cliPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Clínica' || r.destino === 'Clínica de Apoyo' || r.destino === 'Clinica')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
+        const fallPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Fallece' || r.destino === 'Eutanasia' || r.destino === 'Fallecido')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
+
+        const sagPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'SAG').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
+        const partPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Particular').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
+        const rescPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Rescate').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
 
         let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 30 : 150;
         
-        doc.setFontSize(12);
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.text("Resumen Estadístico del Reporte", 40, currentY);
         
         currentY += 20;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Total de Ingresos: ${totalIngresosPDF} ejemplares`, 40, currentY);
-        doc.text(`Total de Egresos: ${totalEgresosPDF} ejemplares`, 250, currentY);
-        doc.text(`Pacientes Activos (Neto): ${Math.max(0, totalIngresosPDF - totalEgresosPDF)}`, 450, currentY);
+        doc.text(`Total Ingresos: ${totalIngresosPDF} ejemplares`, 40, currentY);
+        doc.text(`Total Egresos: ${totalEgresosPDF} ejemplares`, 200, currentY);
+        doc.text(`Pacientes Activos (Neto): ${Math.max(0, totalIngresosPDF - totalEgresosPDF)}`, 360, currentY);
         
-        currentY += 15;
-        doc.text(`Tasa de Liberación (Éxito Clínico): ${tasaExitoPDF}%`, 40, currentY);
+        currentY += 30;
+        const barWidth = 320;
+        const barHeight = 8;
+        
+        const drawBar = (x, y, label, pct, r, g, b) => {
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(50, 50, 50);
+            doc.text(label, x, y);
+            doc.text(`${pct}%`, x + barWidth - doc.getTextWidth(`${pct}%`), y);
+            
+            doc.setFillColor(230, 230, 230);
+            doc.rect(x, y + 4, barWidth, barHeight, 'F');
+            
+            if (pct > 0) {
+                doc.setFillColor(r, g, b);
+                doc.rect(x, y + 4, barWidth * (pct / 100), barHeight, 'F');
+            }
+        };
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text("Destinos de Egresos (%)", 40, currentY);
+        doc.text("Categorías de Ingreso (%)", 420, currentY);
+
+        currentY += 20;
+        drawBar(40, currentY, "Liberación (Éxito Clínico)", libPCT, 16, 185, 129);
+        drawBar(420, currentY, "Entregados por SAG", sagPCT, 59, 130, 246);
+        
+        currentY += 25;
+        drawBar(40, currentY, "Clínica de Apoyo / Traspaso", cliPCT, 56, 189, 248);
+        drawBar(420, currentY, "Particulares / Entregas Directas", partPCT, 56, 189, 248);
+        
+        currentY += 25;
+        drawBar(40, currentY, "Fallecido / Deceso / Eutanasia", fallPCT, 245, 158, 11);
+        drawBar(420, currentY, "Rescates Propios CEREFAS", rescPCT, 245, 158, 11);
 
         // Agregar espacio para firma digital
         currentY += 60;
