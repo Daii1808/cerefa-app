@@ -300,12 +300,36 @@
             theme: 'grid'
         });
 
+        // Calcular Estadísticas de los Registros Filtrados
+        const registrosFiltradosObj = registrosCompletos.filter(r => fichasVisibles.includes(r.numero_ficha));
+        const totalIngresosPDF = registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
+        const totalEgresosPDF = registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
+        const tasaExitoPDF = totalEgresosPDF > 0 
+            ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Liberado' || r.destino === 'Liberación' || r.destino === 'Liberacion')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) 
+            : 0;
+
+        let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 30 : 150;
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Resumen Estadístico del Reporte", 40, currentY);
+        
+        currentY += 20;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Total de Ingresos: ${totalIngresosPDF} ejemplares`, 40, currentY);
+        doc.text(`Total de Egresos: ${totalEgresosPDF} ejemplares`, 250, currentY);
+        doc.text(`Pacientes Activos (Neto): ${Math.max(0, totalIngresosPDF - totalEgresosPDF)}`, 450, currentY);
+        
+        currentY += 15;
+        doc.text(`Tasa de Liberación (Éxito Clínico): ${tasaExitoPDF}%`, 40, currentY);
+
         // Agregar espacio para firma digital
-        const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 150;
+        currentY += 60;
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
-        doc.text("Firma: ___________________________", 40, finalY + 60);
-        doc.text("Responsable CEREFAS", 40, finalY + 75);
+        doc.text("Firma: ___________________________", 40, currentY);
+        doc.text("Responsable CEREFAS", 40, currentY + 15);
 
         // Descargar archivo con nombre dinámico
         const nombreArchivo = `CEREFAS_Reporte_${filtroSemestre ? filtroSemestre + '_' : ''}${añoActual}.pdf`;
