@@ -5,7 +5,7 @@ import autoTable from 'jspdf-autotable';
 import logoCerefa from './assets/logo.jpg';
 
 function App() {
-  const diccionarioAnimales = {
+  const [diccionarioAnimales, setDiccionarioAnimales] = useState({
     'PATO JERGÓN': { cientifico: 'Anas georgica', categoria: 'Aves', destino: 'Rehabilitación' },
     'GARZA GRANDE': { cientifico: 'Ardea alba', categoria: 'Aves', destino: 'Clínica' },
     'BANDURRIA': { cientifico: 'Theristicus melanopis', categoria: 'Aves', destino: 'Rehabilitación' },
@@ -26,7 +26,7 @@ function App() {
     'CORMORAN': { cientifico: 'Phalacrocorax', categoria: 'Aves', destino: 'Rehabilitación' },
     'CONCON': { cientifico: 'Strix rufipes', categoria: 'Rapaces', destino: 'Rehabilitación' },
     'CERNICALO': { cientifico: 'Falco sparverius', categoria: 'Rapaces', destino: 'Rehabilitación' }
-  };
+  });
 
   // Estados de Autenticación
   const [estaAutenticado, setEstaAutenticado] = useState(false);
@@ -58,6 +58,14 @@ function App() {
 
   // Estados del Formulario de Evento
   const [tipoEvento, setTipoEvento] = useState('Ingreso'); // 'Ingreso' o 'Egreso'
+  
+  // Estados Modal Inventario Activo
+  const [modalActivosAbierto, setModalActivosAbierto] = useState(false);
+  const [especieModalActivos, setEspecieModalActivos] = useState('');
+  
+  // Filtros para Métricas
+  const [metricaFiltroTiempo, setMetricaFiltroTiempo] = useState('Todos');
+  const [metricaFiltroEspecie, setMetricaFiltroEspecie] = useState('Todas');
   const [nombreComun, setNombreComun] = useState('');
   const [nombreCientifico, setNombreCientifico] = useState('');
   const [cantidad, setCantidad] = useState(1);
@@ -73,6 +81,26 @@ function App() {
     try {
       const datos = await obtenerEventos();
       setRegistros(datos || []);
+      
+      // Enriquecer el diccionario con especies dinámicas guardadas
+      if (datos && datos.length > 0) {
+        setDiccionarioAnimales(prevDict => {
+          const nuevoDict = { ...prevDict };
+          datos.forEach(r => {
+            if (r.nombre_comun && r.nombre_cientifico) {
+              const especieKey = r.nombre_comun.toUpperCase();
+              if (!nuevoDict[especieKey]) {
+                nuevoDict[especieKey] = {
+                  cientifico: r.nombre_cientifico,
+                  categoria: r.categoria_evento || 'Otra',
+                  destino: r.destino || 'Rehabilitación'
+                };
+              }
+            }
+          });
+          return nuevoDict;
+        });
+      }
     } catch (error) {
       console.error("Error al cargar eventos:", error);
     } finally {
@@ -87,11 +115,10 @@ function App() {
   // Rellenar automáticamente el nombre científico al seleccionar una especie (solo en Ingresos)
   useEffect(() => {
     if (tipoEvento === 'Ingreso') {
-      if (nombreComun && diccionarioAnimales[nombreComun]) {
-        setNombreCientifico(diccionarioAnimales[nombreComun].cientifico);
-        setDestino(diccionarioAnimales[nombreComun].destino);
-      } else {
-        setNombreCientifico('');
+      const especieUpper = nombreComun ? nombreComun.toUpperCase() : '';
+      if (especieUpper && diccionarioAnimales[especieUpper]) {
+        setNombreCientifico(diccionarioAnimales[especieUpper].cientifico);
+        setDestino(diccionarioAnimales[especieUpper].destino);
       }
     }
   }, [nombreComun, tipoEvento]);
@@ -275,6 +302,22 @@ function App() {
       }));
   };
 
+  // Obtener Fichas Específicas para Modal
+  const getFichasPorEspecie = (especie) => {
+    const fichasMap = new Map();
+    registros.forEach(reg => {
+      if (reg.numero_ficha && reg.nombre_comun === especie && !fichasMap.has(reg.numero_ficha)) {
+        fichasMap.set(reg.numero_ficha, reg);
+      }
+    });
+    return Array.from(fichasMap.values()).filter(r => r.saldo_actual > 0);
+  };
+
+  const abrirModalActivos = (especie) => {
+    setEspecieModalActivos(especie);
+    setModalActivosAbierto(true);
+  };
+
   // Lógica de Filtrado de Registros
   const registrosFiltrados = registros.filter(reg => {
     const fecha = reg.fecha ? reg.fecha.substring(0, 10) : '-';
@@ -305,7 +348,7 @@ function App() {
       console.log("Iniciando descargarPDF...");
       const doc = new jsPDF('l', 'pt', 'a4');
       const añoActual = new Date().getFullYear();
-      let tituloPDF = "Reporte de Registros CEREFA";
+      let tituloPDF = "Reporte de Registros CEREFAS";
       if (filtroSemestre === 'S1') tituloPDF += ` - 1° Semestre ${añoActual}`;
       if (filtroSemestre === 'S2') tituloPDF += ` - 2° Semestre ${añoActual}`;
 
@@ -364,7 +407,14 @@ function App() {
         throw new Error("autoTable module is an object but doesn't have a default function: " + JSON.stringify(autoTable));
       }
 
-      const nombreArchivo = `CEREFA_Reporte_${filtroSemestre ? filtroSemestre + '_' : ''}${añoActual}.pdf`;
+      // Agregar espacio para firma digital
+      const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 150;
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Firma: ___________________________", 40, finalY + 60);
+      doc.text("Responsable CEREFAS", 40, finalY + 75);
+
+      const nombreArchivo = `CEREFAS_Reporte_${filtroSemestre ? filtroSemestre + '_' : ''}${añoActual}.pdf`;
       doc.save(nombreArchivo);
       console.log("PDF generado con éxito:", nombreArchivo);
     } catch (error) {
@@ -401,12 +451,29 @@ function App() {
     }
   };
 
-  // Métricas rápidas para las tarjetas del Dashboard
-  const totalIngresos = registros.filter(r => r.tipo_evento === 'Ingreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
-  const totalEgresos = registros.filter(r => r.tipo_evento === 'Egreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
+  // Métricas rápidas y filtros para Gráficos
+  let registrosMetricas = [...registros];
+  if (metricaFiltroTiempo !== 'Todos') {
+    const ahora = new Date();
+    registrosMetricas = registrosMetricas.filter(r => {
+      if (!r.fecha) return false;
+      const fechaReg = new Date(r.fecha);
+      const diffDias = (ahora - fechaReg) / (1000 * 60 * 60 * 24);
+      if (metricaFiltroTiempo === 'Semanal') return diffDias <= 7;
+      if (metricaFiltroTiempo === 'Mensual') return diffDias <= 30;
+      if (metricaFiltroTiempo === 'Anual') return diffDias <= 365;
+      return true;
+    });
+  }
+  if (metricaFiltroEspecie !== 'Todas') {
+    registrosMetricas = registrosMetricas.filter(r => r.nombre_comun && r.nombre_comun.toUpperCase() === metricaFiltroEspecie);
+  }
+
+  const totalIngresos = registrosMetricas.filter(r => r.tipo_evento === 'Ingreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
+  const totalEgresos = registrosMetricas.filter(r => r.tipo_evento === 'Egreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
   const pacientesActivos = Math.max(0, totalIngresos - totalEgresos);
   const tasaExito = totalEgresos > 0 
-    ? Math.round((registros.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Liberado' || r.destino === 'Liberación')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
+    ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Liberado' || r.destino === 'Liberación')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
     : 0;
 
   return (
@@ -422,7 +489,7 @@ function App() {
                 className="marcador-logo"
               />
               <h2 style={{ color: '#ffffff', fontSize: '26px', fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-0.5px' }}>
-                ACCESO CEREFA
+                ACCESO CEREFAS
               </h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '5px' }}>
                 Centro de Fauna Silvestre
@@ -472,7 +539,7 @@ function App() {
           {/* Cabecera Estilizada */}
           <header className="cabecera-cerefa">
             <img src={logoCerefa} alt="Logo CEREFA" className="marcador-logo" />  
-            <h1 className="titulo-plataforma">Plataforma CEREFA</h1>
+            <h1 className="titulo-plataforma">Plataforma CEREFAS</h1>
             <p className="subtitulo-plataforma">Centro de Rehabilitación de Fauna Silvestre</p>
           </header>
 
@@ -636,8 +703,11 @@ function App() {
                       <input 
                         type="text" 
                         value={nombreCientifico} 
-                        disabled 
-                        className="input-cerefa input-deshabilitado" 
+                        onChange={(e) => setNombreCientifico(e.target.value)}
+                        disabled={tipoEvento === 'Egreso'}
+                        className={`input-cerefa ${tipoEvento === 'Egreso' ? 'input-deshabilitado' : ''}`}
+                        placeholder="Autocompletado o escribe..."
+                        required
                       />
                     </div>
                   </div>
@@ -675,7 +745,7 @@ function App() {
                             <option value="SAG Osorno" />
                             <option value="SAG Río Negro" />
                             <option value="Particular" />
-                            <option value="Rescate CEREFA" />
+                            <option value="Rescate CEREFAS" />
                             <option value="Entrega Voluntaria" />
                           </datalist>
                         </>
@@ -936,7 +1006,7 @@ function App() {
                   ) : (
                     <div className="inventario-grid">
                       {obtenerInventario().map(item => (
-                        <div key={item.nombreComun} className="ficha-inventario">
+                        <div key={item.nombreComun} className="ficha-inventario cursor-pointer" onClick={() => abrirModalActivos(item.nombreComun)}>
                           <div className="ficha-header">
                             <div>
                               <div className="ficha-especie">{item.nombreComun}</div>
@@ -956,6 +1026,46 @@ function App() {
                       ))}
                     </div>
                   )}
+
+                  {/* MODAL FICHAS ACTIVAS */}
+                  {modalActivosAbierto && (
+                    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: '16px' }} onClick={() => setModalActivosAbierto(false)}>
+                      <div style={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #27272a', paddingBottom: '16px', marginBottom: '16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ backgroundColor: 'rgba(6, 78, 59, 0.5)', padding: '12px', borderRadius: '50%', border: '1px solid rgba(4, 120, 87, 0.5)', fontSize: '24px' }}>🩺</div>
+                            <div>
+                              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: 'white' }}>{especieModalActivos}</h3>
+                              <p style={{ margin: 0, fontSize: '14px', fontFamily: 'monospace', color: '#34d399' }}>Pacientes actualmente en el centro</p>
+                            </div>
+                          </div>
+                          <button onClick={() => setModalActivosAbierto(false)} style={{ color: '#71717a', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                        </div>
+                        
+                        <div style={{ overflowY: 'auto', paddingRight: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          {getFichasPorEspecie(especieModalActivos).length === 0 ? (
+                            <p style={{ color: '#71717a', textAlign: 'center', fontStyle: 'italic', padding: '16px 0' }}>No se encontraron detalles de las fichas para esta especie.</p>
+                          ) : (
+                            getFichasPorEspecie(especieModalActivos).map(p => (
+                              <div key={p.numero_ficha} style={{ backgroundColor: '#09090b', padding: '16px', borderRadius: '8px', border: '1px solid #27272a', transition: 'border-color 0.2s' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
+                                  <span style={{ color: '#34d399', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '18px' }}>{p.numero_ficha}</span>
+                                  <span style={{ backgroundColor: '#27272a', color: '#d4d4d8', fontSize: '12px', padding: '4px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>Saldo: {p.saldo_actual}</span>
+                                </div>
+                                <div>
+                                  <span style={{ color: '#71717a', display: 'block', fontSize: '12px', textTransform: 'uppercase', marginBottom: '4px' }}>Observación Actual</span>
+                                  <p style={{ color: 'white', fontSize: '14px', margin: 0 }}>{p.observacion}</p>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        <button onClick={() => setModalActivosAbierto(false)} style={{ marginTop: '24px', width: '100%', backgroundColor: '#27272a', color: 'white', fontWeight: 'bold', padding: '12px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>Cerrar</button>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
             )}
@@ -964,10 +1074,32 @@ function App() {
             {activeTab === 'metricas' && (
               <div className="animate-fade">
                 <div className="panel-oscuro">
-                  <h2>Métricas Clínicas e Indicadores CEREFA</h2>
-                  <p style={{ color: 'var(--text-secondary)', marginBottom: '30px', fontSize: '14px' }}>
+                  <h2>Métricas Clínicas e Indicadores CEREFAS</h2>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: '15px', fontSize: '14px' }}>
                     Visualiza la tasa de éxito clínico y la distribución de destinos y categorías de la fauna ingresada.
                   </p>
+                  
+                  {/* Filtros de Métricas */}
+                  <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
+                    <div style={{ flex: 1, maxWidth: '200px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '5px', display: 'block' }}>Rango de Tiempo</label>
+                      <select value={metricaFiltroTiempo} onChange={e => setMetricaFiltroTiempo(e.target.value)} className="select-cerefa" style={{ width: '100%' }}>
+                        <option value="Todos">Histórico Completo</option>
+                        <option value="Semanal">Última Semana</option>
+                        <option value="Mensual">Último Mes</option>
+                        <option value="Anual">Último Año</option>
+                      </select>
+                    </div>
+                    <div style={{ flex: 1, maxWidth: '300px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '5px', display: 'block' }}>Filtrar por Especie</label>
+                      <select value={metricaFiltroEspecie} onChange={e => setMetricaFiltroEspecie(e.target.value)} className="select-cerefa" style={{ width: '100%' }}>
+                        <option value="Todas">Todas las Especies</option>
+                        {Object.keys(diccionarioAnimales).sort().map(esp => (
+                          <option key={esp} value={esp}>{esp}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
                     {/* Gráfico 1: Tasa de Éxito y Destino de Egresos */}
@@ -989,12 +1121,12 @@ function App() {
                             <span>Clínica de Apoyo / Traspaso</span>
                             <span>
                               {totalEgresos > 0 
-                                ? Math.round((registros.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Clínica' || r.destino === 'Clínica de Apoyo' || r.destino === 'Clinica')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
+                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Clínica' || r.destino === 'Clínica de Apoyo' || r.destino === 'Clinica')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill info" style={{ width: `${totalEgresos > 0 ? (registros.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Clínica' || r.destino === 'Clínica de Apoyo' || r.destino === 'Clinica')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill info" style={{ width: `${totalEgresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Clínica' || r.destino === 'Clínica de Apoyo' || r.destino === 'Clinica')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
 
@@ -1003,12 +1135,12 @@ function App() {
                             <span>Fallecido / Deceso / Eutanasia</span>
                             <span>
                               {totalEgresos > 0 
-                                ? Math.round((registros.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Fallece' || r.destino === 'Eutanasia' || r.destino === 'Fallecido')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
+                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Fallece' || r.destino === 'Eutanasia' || r.destino === 'Fallecido')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill warning" style={{ width: `${totalEgresos > 0 ? (registros.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Fallece' || r.destino === 'Eutanasia' || r.destino === 'Fallecido')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill warning" style={{ width: `${totalEgresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Fallece' || r.destino === 'Eutanasia' || r.destino === 'Fallecido')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
                       </div>
@@ -1023,12 +1155,12 @@ function App() {
                             <span>Entregados por SAG</span>
                             <span>
                               {totalIngresos > 0 
-                                ? Math.round((registros.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'SAG').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
+                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'SAG').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill primary" style={{ width: `${totalIngresos > 0 ? (registros.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'SAG').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill primary" style={{ width: `${totalIngresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'SAG').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
 
@@ -1037,26 +1169,26 @@ function App() {
                             <span>Particulares / Entregas Directas</span>
                             <span>
                               {totalIngresos > 0 
-                                ? Math.round((registros.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Particular').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
+                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Particular').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill info" style={{ width: `${totalIngresos > 0 ? (registros.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Particular').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill info" style={{ width: `${totalIngresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Particular').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
 
                         <div className="chart-bar-item">
                           <div className="chart-bar-header">
-                            <span>Rescates Propios CEREFA</span>
+                            <span>Rescates Propios CEREFAS</span>
                             <span>
                               {totalIngresos > 0 
-                                ? Math.round((registros.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Rescate').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
+                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Rescate').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill warning" style={{ width: `${totalIngresos > 0 ? (registros.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Rescate').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill warning" style={{ width: `${totalIngresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Rescate').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
                       </div>

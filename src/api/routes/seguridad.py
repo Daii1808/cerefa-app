@@ -1,6 +1,6 @@
 from flask import Blueprint, session, jsonify, request
 
-from src.api.auth_service import verificar_acceso_a_pantalla
+from src.core.services.auth_service import verificar_acceso_a_pantalla
 from src.database.repository import actualizar_desde_modal
 
 seguridad_bp = Blueprint('seguridad_fauna', __name__)

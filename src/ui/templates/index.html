@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Registros - CEREFA{% endblock %}
+{% block title %}Registros - CEREFAS{% endblock %}
 
 {% block content %}
 <div class="flex justify-between items-center mb-6">
@@ -246,7 +246,7 @@
         // Determinar si hay un filtro de semestre aplicado
         const filtroSemestre = document.getElementById('filtro_semestre').value;
         const añoActual = new Date().getFullYear();
-        let tituloPDF = "Reporte de Registros CEREFA";
+        let tituloPDF = "Reporte de Registros CEREFAS";
         if (filtroSemestre === 'S1') tituloPDF += ` - 1° Semestre ${añoActual}`;
         if (filtroSemestre === 'S2') tituloPDF += ` - 2° Semestre ${añoActual}`;
 
@@ -300,8 +300,15 @@
             theme: 'grid'
         });
 
+        // Agregar espacio para firma digital
+        const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 150;
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text("Firma: ___________________________", 40, finalY + 60);
+        doc.text("Responsable CEREFAS", 40, finalY + 75);
+
         // Descargar archivo con nombre dinámico
-        const nombreArchivo = `CEREFA_Reporte_${filtroSemestre ? filtroSemestre + '_' : ''}${añoActual}.pdf`;
+        const nombreArchivo = `CEREFAS_Reporte_${filtroSemestre ? filtroSemestre + '_' : ''}${añoActual}.pdf`;
         doc.save(nombreArchivo);
     }
     // ===================================
@@ -337,6 +344,24 @@
         "CORMORAN": "Phalacrocorax carbo", "CONCON": "Strix rufipes",
         "CERNICALO": "Falco sparverius", "PEUCO": "Parabuteo unicinctus"
     };
+
+    if (typeof registrosCompletos !== 'undefined' && registrosCompletos.length > 0) {
+        const dataList = document.getElementById('lista_especies');
+        registrosCompletos.forEach(r => {
+            if (r.nombre_comun && r.nombre_cientifico) {
+                const nombreUpper = r.nombre_comun.toUpperCase();
+                if (!diccionarioEspecies[nombreUpper]) {
+                    diccionarioEspecies[nombreUpper] = r.nombre_cientifico;
+                    // Agregar al datalist visual si no existe
+                    if(dataList && !Array.from(dataList.options).some(opt => opt.value === nombreUpper)) {
+                        const option = document.createElement('option');
+                        option.value = nombreUpper;
+                        dataList.appendChild(option);
+                    }
+                }
+            }
+        });
+    }
 
     function actualizarNombreCientifico() {
         const comun = document.getElementById("nombre_comun").value.trim().toUpperCase();

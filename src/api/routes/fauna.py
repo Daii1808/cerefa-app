@@ -2,8 +2,8 @@ from datetime import datetime
 
 from flask import Blueprint, jsonify, request, session
 from src.database.models import Paciente
-from src.core.fauna_service import FaunaService
-from src.api.auth_service import verificar_acceso_a_pantalla
+from src.core.services.fauna_service import FaunaService
+from src.core.services.auth_service import verificar_acceso_a_pantalla
 
 fauna_bp = Blueprint('fauna', __name__)
 

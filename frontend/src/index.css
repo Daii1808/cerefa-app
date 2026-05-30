@@ -38,6 +38,84 @@
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
+/* DAY THEME VARIABLES */
+:root[data-theme="day"] {
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #f8fafc;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --border-color-glow: rgba(0, 182, 122, 0.3);
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --primary: #059669;
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="day"] body {
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(5, 150, 105, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
+}
+
+:root[data-theme="day"] .titulo-plataforma {
+  background: linear-gradient(135deg, #1e293b 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+:root[data-theme="day"] .panel-oscuro h2,
+:root[data-theme="day"] .ficha-especie,
+:root[data-theme="day"] .table-especie,
+:root[data-theme="day"] .metrica-valor {
+  color: #1e293b;
+}
+
+:root[data-theme="day"] .input-cerefa, 
+:root[data-theme="day"] .select-cerefa {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #1e293b;
+}
+
+:root[data-theme="day"] .input-deshabilitado {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+:root[data-theme="day"] .btn-tipo {
+  background-color: #f8fafc;
+  color: #475569;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="day"] .btn-tipo:hover {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+:root[data-theme="day"] .btn-tipo.activo-ingreso {
+  background-color: var(--primary);
+  color: white;
+}
+
+:root[data-theme="day"] .btn-tipo.activo-egreso {
+  background-color: var(--danger);
+  color: white;
+}
+
+:root[data-theme="day"] .ficha-inventario,
+:root[data-theme="day"] .contenedor-tabla {
+  background: #ffffff;
+}
+
+:root[data-theme="day"] .tabla-cerefa th {
+  background: #f8fafc;
+}
+
+:root[data-theme="day"] .tabla-cerefa tr:hover td {
+  background-color: rgba(0, 0, 0, 0.02);
+}
 /* RESET */
 * {
   margin: 0;
