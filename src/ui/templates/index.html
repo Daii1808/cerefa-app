@@ -305,13 +305,13 @@
         const totalIngresosPDF = registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
         const totalEgresosPDF = registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
         
-        const libPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Liberado' || r.destino === 'Liberación' || r.destino === 'Liberacion')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
-        const cliPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Clínica' || r.destino === 'Clínica de Apoyo' || r.destino === 'Clinica')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
-        const fallPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Fallece' || r.destino === 'Eutanasia' || r.destino === 'Fallecido')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
+        const libPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso' && (r.destino || '').toUpperCase().includes('LIBERA')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
+        const cliPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('CLÍNICA') || (r.destino || '').toUpperCase().includes('CLINICA') || (r.destino || '').toUpperCase().includes('TRASPASO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
+        const fallPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('FALLECI') || (r.destino || '').toUpperCase().includes('EUTANASIA') || (r.destino || '').toUpperCase().includes('DECESO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
 
-        const sagPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'SAG').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
-        const partPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Particular').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
-        const rescPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Rescate').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
+        const sagPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('SAG')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
+        const partPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('PARTICULAR')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
+        const rescPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('RESCATE')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
 
         let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 30 : 150;
         
@@ -322,8 +322,8 @@
         currentY += 20;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Total Ingresos: ${totalIngresosPDF} ejemplares`, 40, currentY);
-        doc.text(`Total Egresos: ${totalEgresosPDF} ejemplares`, 200, currentY);
+        doc.text(`Total Ingresos: ${totalIngresosPDF}`, 40, currentY);
+        doc.text(`Total Egresos: ${totalEgresosPDF}`, 200, currentY);
         doc.text(`Pacientes Activos (Neto): ${Math.max(0, totalIngresosPDF - totalEgresosPDF)}`, 360, currentY);
         
         currentY += 30;

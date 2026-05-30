@@ -411,13 +411,13 @@ function App() {
       const totalIngresosPDF = registrosFiltrados.filter(r => r.tipo_evento === 'Ingreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
       const totalEgresosPDF = registrosFiltrados.filter(r => r.tipo_evento === 'Egreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
       
-      const libPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Liberado' || r.destino === 'Liberación')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
-      const cliPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Clínica' || r.destino === 'Clínica de Apoyo' || r.destino === 'Clinica')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
-      const fallPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Fallece' || r.destino === 'Eutanasia' || r.destino === 'Fallecido')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
+      const libPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Egreso' && (r.destino || '').toUpperCase().includes('LIBERA')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
+      const cliPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('CLÍNICA') || (r.destino || '').toUpperCase().includes('CLINICA') || (r.destino || '').toUpperCase().includes('TRASPASO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
+      const fallPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('FALLECI') || (r.destino || '').toUpperCase().includes('EUTANASIA') || (r.destino || '').toUpperCase().includes('DECESO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
 
-      const sagPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'SAG').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
-      const partPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Particular').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
-      const rescPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Rescate').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
+      const sagPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('SAG')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
+      const partPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('PARTICULAR')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
+      const rescPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('RESCATE')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
 
       let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 30 : 150;
       
@@ -428,8 +428,8 @@ function App() {
       currentY += 20;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Total Ingresos: ${totalIngresosPDF} ejemplares`, 40, currentY);
-      doc.text(`Total Egresos: ${totalEgresosPDF} ejemplares`, 200, currentY);
+      doc.text(`Total Ingresos: ${totalIngresosPDF}`, 40, currentY);
+      doc.text(`Total Egresos: ${totalEgresosPDF}`, 200, currentY);
       doc.text(`Pacientes Activos (Neto): ${Math.max(0, totalIngresosPDF - totalEgresosPDF)}`, 360, currentY);
       
       currentY += 30;
@@ -536,7 +536,7 @@ function App() {
   const totalEgresos = registrosMetricas.filter(r => r.tipo_evento === 'Egreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
   const pacientesActivos = Math.max(0, totalIngresos - totalEgresos);
   const tasaExito = totalEgresos > 0 
-    ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Liberado' || r.destino === 'Liberación')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
+    ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && (r.destino || '').toUpperCase().includes('LIBERA')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
     : 0;
 
   return (
@@ -1184,12 +1184,12 @@ function App() {
                             <span>Clínica de Apoyo / Traspaso</span>
                             <span>
                               {totalEgresos > 0 
-                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Clínica' || r.destino === 'Clínica de Apoyo' || r.destino === 'Clinica')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
+                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('CLÍNICA') || (r.destino || '').toUpperCase().includes('CLINICA') || (r.destino || '').toUpperCase().includes('TRASPASO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill info" style={{ width: `${totalEgresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Clínica' || r.destino === 'Clínica de Apoyo' || r.destino === 'Clinica')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill info" style={{ width: `${totalEgresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('CLÍNICA') || (r.destino || '').toUpperCase().includes('CLINICA') || (r.destino || '').toUpperCase().includes('TRASPASO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
 
@@ -1198,12 +1198,12 @@ function App() {
                             <span>Fallecido / Deceso / Eutanasia</span>
                             <span>
                               {totalEgresos > 0 
-                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Fallece' || r.destino === 'Eutanasia' || r.destino === 'Fallecido')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
+                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('FALLECI') || (r.destino || '').toUpperCase().includes('EUTANASIA') || (r.destino || '').toUpperCase().includes('DECESO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill warning" style={{ width: `${totalEgresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && (r.destino === 'Fallece' || r.destino === 'Eutanasia' || r.destino === 'Fallecido')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill warning" style={{ width: `${totalEgresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('FALLECI') || (r.destino || '').toUpperCase().includes('EUTANASIA') || (r.destino || '').toUpperCase().includes('DECESO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
                       </div>
@@ -1218,12 +1218,12 @@ function App() {
                             <span>Entregados por SAG</span>
                             <span>
                               {totalIngresos > 0 
-                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'SAG').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
+                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('SAG')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill primary" style={{ width: `${totalIngresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'SAG').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill primary" style={{ width: `${totalIngresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('SAG')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
 
@@ -1232,12 +1232,12 @@ function App() {
                             <span>Particulares / Entregas Directas</span>
                             <span>
                               {totalIngresos > 0 
-                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Particular').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
+                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('PARTICULAR')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill info" style={{ width: `${totalIngresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Particular').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill info" style={{ width: `${totalIngresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('PARTICULAR')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
 
@@ -1246,12 +1246,12 @@ function App() {
                             <span>Rescates Propios CEREFAS</span>
                             <span>
                               {totalIngresos > 0 
-                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Rescate').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
+                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('RESCATE')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill warning" style={{ width: `${totalIngresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && r.categoria_evento === 'Rescate').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill warning" style={{ width: `${totalIngresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('RESCATE')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
                       </div>
