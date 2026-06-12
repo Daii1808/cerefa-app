@@ -594,7 +594,12 @@ function App() {
   };
 
   const abrirModal = (registro) => {
-    setRegistroSeleccionado({...registro});
+    // Tomar solo YYYY-MM-DD de la fecha si existe
+    const fechaFormateada = registro.fecha ? registro.fecha.substring(0, 10) : '';
+    setRegistroSeleccionado({
+      ...registro,
+      fecha: fechaFormateada
+    });
     setModoEdicion(false);
     setModalAbierto(true);
   };
@@ -1187,7 +1192,7 @@ function App() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                           <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
                             <span style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>Fecha</span>
-                            <input type="text" value={registroSeleccionado.fecha || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, fecha: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid var(--primary)' : 'none', color: 'var(--text-primary)', fontSize: '12px', outline: 'none' }} />
+                            <input type={modoEdicion ? "date" : "text"} value={registroSeleccionado.fecha || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, fecha: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid var(--primary)' : 'none', color: 'var(--text-primary)', fontSize: '12px', outline: 'none' }} />
                           </div>
                           <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
                             <span style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>N° Acta</span>
@@ -1197,7 +1202,22 @@ function App() {
 
                         <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>Destino</span>
-                          <input type="text" value={registroSeleccionado.destino || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, destino: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid var(--primary)' : 'none', color: 'var(--text-primary)', fontSize: '12px', outline: 'none' }} />
+                          {modoEdicion ? (
+                            <select 
+                              value={registroSeleccionado.destino || ''} 
+                              onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, destino: e.target.value})} 
+                              style={{ width: '100%', background: 'var(--bg-secondary)', border: '1px solid var(--primary)', color: 'var(--text-primary)', fontSize: '12px', outline: 'none', padding: '2px 0', borderRadius: '4px' }}
+                            >
+                              <option value="Rehabilitación">Rehabilitación</option>
+                              <option value="Clínica">Clínica</option>
+                              <option value="Ingreso">Ingreso</option>
+                              <option value="Liberado">Liberado</option>
+                              <option value="Fallece">Fallece</option>
+                              <option value="Eutanasia">Eutanasia</option>
+                            </select>
+                          ) : (
+                            <input type="text" value={registroSeleccionado.destino || ''} disabled style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '12px', outline: 'none' }} />
+                          )}
                         </div>
 
                         <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
