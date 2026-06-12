@@ -118,11 +118,11 @@
 }
 
 :root[data-theme="day"] .cabecera-cerefa {
-  background: #DBCFBB;
+  background: var(--bg-card);
 }
 
 :root[data-theme="day"] .tab-navigation {
-  background: #DBCFBB;
+  background: var(--bg-card);
 }
 
 :root[data-theme="day"] .marcador-logo {
