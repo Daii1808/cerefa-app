@@ -116,6 +116,31 @@
 :root[data-theme="day"] .tabla-cerefa tr:hover td {
   background-color: rgba(0, 0, 0, 0.02);
 }
+
+:root[data-theme="day"] .cabecera-cerefa {
+  background: #DBCFBB;
+}
+
+:root[data-theme="day"] .tab-navigation {
+  background: #DBCFBB;
+}
+
+:root[data-theme="day"] .marcador-logo {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+:root[data-theme="day"] .tab-btn {
+  color: #475569;
+}
+
+:root[data-theme="day"] .tab-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  color: #1e293b;
+}
+
+:root[data-theme="day"] .tab-btn.active {
+  color: #ffffff;
+}
 /* RESET */
 * {
   margin: 0;
