@@ -960,6 +960,7 @@ function App() {
                         className="input-cerefa"
                         placeholder="Ej: Rehabilitación / Liberado / Fallece"
                         required
+                        autoComplete="off"
                       />
                       <datalist id="lista_destinos">
                         <option value="Rehabilitación" />
