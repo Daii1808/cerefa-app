@@ -180,7 +180,12 @@ function App() {
         setNombreComun(registroFicha.nombre_comun || '');
         setNombreCientifico(registroFicha.nombre_cientifico || '');
         setCategoriaEvento(registroFicha.categoria_evento || 'Particular');
-        setDestino(registroFicha.destino || 'Clínica');
+        // No copiar 'Rehabilitación' como destino para un Egreso
+        if (registroFicha.destino && registroFicha.destino !== 'Rehabilitación') {
+          setDestino(registroFicha.destino);
+        } else {
+          setDestino('');
+        }
       }
     }
   }, [numeroFichaSeleccionada, tipoEvento, registros]);
@@ -194,6 +199,7 @@ function App() {
     setObservacion('');
     setCantidad(1);
     setNumeroActa('');
+    setDestino(tipo === 'Ingreso' ? 'Rehabilitación' : '');
   };
 
   // Agregar Nueva Especie
@@ -520,7 +526,7 @@ function App() {
       
       const libPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Egreso' && (r.destino || '').toUpperCase().includes('LIBERA')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
       const cliPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('CLÍNICA') || (r.destino || '').toUpperCase().includes('CLINICA') || (r.destino || '').toUpperCase().includes('TRASPASO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
-      const fallPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('FALLECI') || (r.destino || '').toUpperCase().includes('EUTANASIA') || (r.destino || '').toUpperCase().includes('DECESO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
+      const fallPCT = totalEgresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('FALLEC') || (r.destino || '').toUpperCase().includes('EUTANASIA') || (r.destino || '').toUpperCase().includes('DECESO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresosPDF) * 100) : 0;
 
       const sagPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('SAG')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
       const partPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('PARTICULAR')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
@@ -1402,12 +1408,12 @@ function App() {
                             <span>Fallecido / Deceso / Eutanasia</span>
                             <span>
                               {totalEgresos > 0 
-                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('FALLECI') || (r.destino || '').toUpperCase().includes('EUTANASIA') || (r.destino || '').toUpperCase().includes('DECESO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
+                                ? Math.round((registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('FALLEC') || (r.destino || '').toUpperCase().includes('EUTANASIA') || (r.destino || '').toUpperCase().includes('DECESO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100) 
                                 : 0}%
                             </span>
                           </div>
                           <div className="chart-bar-bg">
-                            <div className="chart-bar-fill warning" style={{ width: `${totalEgresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('FALLECI') || (r.destino || '').toUpperCase().includes('EUTANASIA') || (r.destino || '').toUpperCase().includes('DECESO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
+                            <div className="chart-bar-fill warning" style={{ width: `${totalEgresos > 0 ? (registrosMetricas.filter(r => r.tipo_evento === 'Egreso' && ((r.destino || '').toUpperCase().includes('FALLEC') || (r.destino || '').toUpperCase().includes('EUTANASIA') || (r.destino || '').toUpperCase().includes('DECESO'))).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalEgresos) * 100 : 0}%` }}></div>
                           </div>
                         </div>
                       </div>
