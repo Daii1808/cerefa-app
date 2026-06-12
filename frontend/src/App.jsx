@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { guardarEvento, obtenerEventos, verificarMedico, actualizarEvento } from './supabaseService';
+import { supabase, guardarEvento, obtenerEventos, verificarMedico, actualizarEvento } from './supabaseService';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoCerefa from './assets/logo.jpg';
@@ -66,6 +66,12 @@ function App() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [registroSeleccionado, setRegistroSeleccionado] = useState(null);
   const [modoEdicion, setModoEdicion] = useState(false);
+
+  // Estados del Gestor de Especies
+  const [modalEspeciesAbierto, setModalEspeciesAbierto] = useState(false);
+  const [nuevaEspecieNombre, setNuevaEspecieNombre] = useState('');
+  const [nuevaEspecieCientifico, setNuevaEspecieCientifico] = useState('');
+  const [especieAEliminar, setEspecieAEliminar] = useState('');
 
   // Estados del Formulario de Evento
   const [tipoEvento, setTipoEvento] = useState('Ingreso'); // 'Ingreso' o 'Egreso'
@@ -156,6 +162,56 @@ function App() {
     setObservacion('');
     setCantidad(1);
     setNumeroActa('');
+  };
+
+  // Agregar Nueva Especie
+  const handleAgregarEspecie = () => {
+    if (!nuevaEspecieNombre || !nuevaEspecieCientifico) return alert("Completa ambos campos (Nombre común y Científico).");
+    const confirmacion = window.confirm(`¿Estás seguro de que el nombre "${nuevaEspecieNombre.toUpperCase()}" y el nombre científico "${nuevaEspecieCientifico}" están escritos correctamente?`);
+    if (confirmacion) {
+      const especieUpper = nuevaEspecieNombre.toUpperCase();
+      setDiccionarioAnimales(prev => ({
+        ...prev,
+        [especieUpper]: {
+          cientifico: nuevaEspecieCientifico,
+          categoria: 'Otra',
+          destino: 'Rehabilitación'
+        }
+      }));
+      setNombreComun(especieUpper);
+      setNombreCientifico(nuevaEspecieCientifico);
+      setModalEspeciesAbierto(false);
+      setNuevaEspecieNombre('');
+      setNuevaEspecieCientifico('');
+    }
+  };
+
+  // Eliminar Especie y Registros
+  const handleEliminarEspecie = async () => {
+    if (!especieAEliminar) return alert("Selecciona una especie a eliminar.");
+    const confirmacion = window.confirm(`⚠️ ADVERTENCIA CRÍTICA: Esto eliminará permanentemente de la base de datos la especie "${especieAEliminar}" y TODOS los registros médicos de pacientes asociados a ella.\n\n¿Estás absolutamente seguro de continuar?`);
+    if (confirmacion) {
+      try {
+        const { error } = await supabase
+          .from('registro_evento')
+          .delete()
+          .eq('nombre_comun', especieAEliminar);
+        if (error) throw error;
+        
+        // Remove from local dictionary
+        setDiccionarioAnimales(prev => {
+          const newDict = { ...prev };
+          delete newDict[especieAEliminar];
+          return newDict;
+        });
+
+        alert("Especie y todos sus registros han sido eliminados correctamente.");
+        setEspecieAEliminar('');
+        await cargarDatos(); // Recargar datos
+      } catch (err) {
+        alert("Error al eliminar la especie: " + err.message);
+      }
+    }
   };
 
   // Manejar Login Médico
@@ -751,21 +807,28 @@ function App() {
                     <div className="grupo-campo">
                       <label>Especie (Nombre Común)</label>
                       {tipoEvento === 'Ingreso' ? (
-                        <>
-                          <input 
-                            list="lista_especies"
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <select 
                             value={nombreComun} 
-                            onChange={(e) => setNombreComun(e.target.value.toUpperCase())} 
-                            className="input-cerefa"
-                            placeholder="Selecciona o escribe..."
+                            onChange={(e) => setNombreComun(e.target.value)} 
+                            className="select-cerefa"
+                            style={{ flex: 1 }}
                             required
-                          />
-                          <datalist id="lista_especies">
-                            {Object.keys(diccionarioAnimales).map(animal => (
-                              <option key={animal} value={animal} />
+                          >
+                            <option value="">-- Selecciona una Especie --</option>
+                            {Object.keys(diccionarioAnimales).sort().map(animal => (
+                              <option key={animal} value={animal}>{animal}</option>
                             ))}
-                          </datalist>
-                        </>
+                          </select>
+                          <button 
+                            type="button" 
+                            onClick={() => setModalEspeciesAbierto(true)}
+                            style={{ backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', width: '46px', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+                            title="Gestionar Especies"
+                          >
+                            +
+                          </button>
+                        </div>
                       ) : (
                         <input 
                           type="text" 
@@ -782,11 +845,9 @@ function App() {
                       <input 
                         type="text" 
                         value={nombreCientifico} 
-                        onChange={(e) => setNombreCientifico(e.target.value)}
-                        disabled={tipoEvento === 'Egreso'}
-                        className={`input-cerefa ${tipoEvento === 'Egreso' ? 'input-deshabilitado' : ''}`}
-                        placeholder="Autocompletado o escribe..."
-                        required
+                        disabled
+                        className="input-cerefa input-deshabilitado"
+                        placeholder="Autocompletado..."
                       />
                     </div>
                   </div>
@@ -891,6 +952,40 @@ function App() {
                     </div>
                   </div>
                 </form>
+
+                {/* MODAL GESTOR DE ESPECIES */}
+                {modalEspeciesAbierto && (
+                  <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70, padding: '15px' }} onClick={() => setModalEspeciesAbierto(false)}>
+                    <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                      <button type="button" onClick={() => setModalEspeciesAbierto(false)} style={{ position: 'absolute', top: '16px', right: '16px', color: 'var(--text-muted)', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                      
+                      <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Gestión de Especies</h2>
+                      
+                      <div style={{ marginBottom: '30px' }}>
+                        <h3 style={{ fontSize: '14px', color: 'var(--primary)', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>➕ Agregar Nueva Especie</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <input type="text" placeholder="Nombre Común (Ej: LORO CHOROY)" value={nuevaEspecieNombre} onChange={e => setNuevaEspecieNombre(e.target.value)} className="input-cerefa" />
+                          <input type="text" placeholder="Nombre Científico (Ej: Enicognathus leptorhynchus)" value={nuevaEspecieCientifico} onChange={e => setNuevaEspecieCientifico(e.target.value)} className="input-cerefa" />
+                          <button type="button" onClick={handleAgregarEspecie} style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>Guardar y Usar Especie</button>
+                        </div>
+                      </div>
+
+                      <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                        <h3 style={{ fontSize: '14px', color: 'var(--danger)', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>🗑️ Eliminar Especie (Corrección)</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <select value={especieAEliminar} onChange={e => setEspecieAEliminar(e.target.value)} className="select-cerefa">
+                            <option value="">-- Selecciona especie a eliminar --</option>
+                            {Object.keys(diccionarioAnimales).sort().map(animal => (
+                              <option key={`del-${animal}`} value={animal}>{animal} ({diccionarioAnimales[animal].cientifico})</option>
+                            ))}
+                          </select>
+                          <button type="button" onClick={handleEliminarEspecie} style={{ backgroundColor: 'var(--danger)', color: 'white', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>Eliminar Especie Permanentemente</button>
+                        </div>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: '1.4' }}>⚠️ <strong>Advertencia:</strong> Eliminar una especie borrará permanentemente de la base de datos todos los registros médicos y pacientes asociados a ella. Úsalo <strong>solo</strong> para corregir especies ingresadas por error o mal escritas.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Tabla de Últimos Registros */}
                 <div className="panel-oscuro">
