@@ -73,6 +73,38 @@ function App() {
   const [nuevaEspecieCientifico, setNuevaEspecieCientifico] = useState('');
   const [especieAEliminar, setEspecieAEliminar] = useState('');
 
+  // Estado para la Notificación (Pop-up Custom)
+  const [notificacion, setNotificacion] = useState({
+    visible: false,
+    tipo: 'alerta',
+    mensaje: '',
+    onConfirm: null,
+    onCancel: null
+  });
+
+  const mostrarAlerta = (mensaje) => {
+    setNotificacion({
+      visible: true,
+      tipo: 'alerta',
+      mensaje,
+      onConfirm: () => setNotificacion(prev => ({ ...prev, visible: false })),
+      onCancel: null
+    });
+  };
+
+  const mostrarConfirmacion = (mensaje, onConfirmAccion) => {
+    setNotificacion({
+      visible: true,
+      tipo: 'confirmacion',
+      mensaje,
+      onConfirm: () => {
+        setNotificacion(prev => ({ ...prev, visible: false }));
+        if (onConfirmAccion) onConfirmAccion();
+      },
+      onCancel: () => setNotificacion(prev => ({ ...prev, visible: false }))
+    });
+  };
+
   // Estados del Formulario de Evento
   const [tipoEvento, setTipoEvento] = useState('Ingreso'); // 'Ingreso' o 'Egreso'
   
@@ -166,9 +198,8 @@ function App() {
 
   // Agregar Nueva Especie
   const handleAgregarEspecie = () => {
-    if (!nuevaEspecieNombre || !nuevaEspecieCientifico) return alert("Completa ambos campos (Nombre común y Científico).");
-    const confirmacion = window.confirm(`¿Estás seguro de que el nombre "${nuevaEspecieNombre.toUpperCase()}" y el nombre científico "${nuevaEspecieCientifico}" están escritos correctamente?`);
-    if (confirmacion) {
+    if (!nuevaEspecieNombre || !nuevaEspecieCientifico) return mostrarAlerta("Completa ambos campos (Nombre común y Científico).");
+    mostrarConfirmacion(`¿Estás seguro de que el nombre "${nuevaEspecieNombre.toUpperCase()}" y el nombre científico "${nuevaEspecieCientifico}" están escritos correctamente?`, () => {
       const especieUpper = nuevaEspecieNombre.toUpperCase();
       setDiccionarioAnimales(prev => ({
         ...prev,
@@ -183,14 +214,13 @@ function App() {
       setModalEspeciesAbierto(false);
       setNuevaEspecieNombre('');
       setNuevaEspecieCientifico('');
-    }
+    });
   };
 
   // Eliminar Especie y Registros
-  const handleEliminarEspecie = async () => {
-    if (!especieAEliminar) return alert("Selecciona una especie a eliminar.");
-    const confirmacion = window.confirm(`⚠️ ADVERTENCIA CRÍTICA: Esto eliminará permanentemente de la base de datos la especie "${especieAEliminar}" y TODOS los registros médicos de pacientes asociados a ella.\n\n¿Estás absolutamente seguro de continuar?`);
-    if (confirmacion) {
+  const handleEliminarEspecie = () => {
+    if (!especieAEliminar) return mostrarAlerta("Selecciona una especie a eliminar.");
+    mostrarConfirmacion(`⚠️ ADVERTENCIA CRÍTICA: Esto eliminará permanentemente de la base de datos la especie "${especieAEliminar}" y TODOS los registros médicos de pacientes asociados a ella.\n\n¿Estás absolutamente seguro de continuar?`, async () => {
       try {
         const { error } = await supabase
           .from('registro_evento')
@@ -205,13 +235,13 @@ function App() {
           return newDict;
         });
 
-        alert("Especie y todos sus registros han sido eliminados correctamente.");
+        mostrarAlerta("Especie y todos sus registros han sido eliminados correctamente.");
         setEspecieAEliminar('');
         await cargarDatos(); // Recargar datos
       } catch (err) {
-        alert("Error al eliminar la especie: " + err.message);
+        mostrarAlerta("Error al eliminar la especie: " + err.message);
       }
-    }
+    });
   };
 
   // Manejar Login Médico
@@ -251,13 +281,13 @@ function App() {
     e.preventDefault();
 
     if (tipoEvento === 'Ingreso' && !nombreComun) {
-      return alert('Por favor selecciona una especie.');
+      return mostrarAlerta('Por favor selecciona una especie.');
     }
     if (tipoEvento === 'Egreso' && !numeroFichaSeleccionada) {
-      return alert('Por favor selecciona una Ficha existente para realizar el egreso.');
+      return mostrarAlerta('Por favor selecciona una Ficha existente para realizar el egreso.');
     }
     if (parseInt(cantidad) <= 0) {
-      return alert('La cantidad debe ser mayor que 0.');
+      return mostrarAlerta('La cantidad debe ser mayor que 0.');
     }
 
     // 1. Calcular Número de Ficha
@@ -280,47 +310,51 @@ function App() {
     const registrosEspecie = registros.filter(r => r.nombre_cientifico === nombreCientifico);
     const saldoAnterior = registrosEspecie.length > 0 ? parseInt(registrosEspecie[0].saldo_actual) || 0 : 0;
     
-    let saldoActual = 0;
+    let saldoActualCalculado = 0;
     if (tipoEvento === 'Ingreso') {
-      saldoActual = saldoAnterior + parseInt(cantidad);
+      saldoActualCalculado = saldoAnterior + parseInt(cantidad);
     } else {
-      saldoActual = Math.max(0, saldoAnterior - parseInt(cantidad));
-      if (parseInt(cantidad) > saldoAnterior) {
-        const confirmar = window.confirm(`¡Atención! Estás egresando ${cantidad} ejemplares pero el inventario registra solo ${saldoAnterior}. ¿Deseas continuar?`);
-        if (!confirmar) return;
-      }
+      saldoActualCalculado = Math.max(0, saldoAnterior - parseInt(cantidad));
     }
 
-    const nuevoEvento = {
-      fecha: new Date().toISOString(),
-      numero_ficha: fichaParaGuardar,
-      numero_acta_movimiento: numeroActa || 'Sin Acta',
-      nombre_comun: nombreComun,
-      nombre_cientifico: nombreCientifico,
-      numero_ejemplar: parseInt(cantidad),
-      tipo_evento: tipoEvento,
-      categoria_evento: categoriaEvento,
-      saldo_anterior: saldoAnterior,
-      saldo_actual: saldoActual,
-      destino: destino,
-      observacion: observacion || 'Sin observaciones',
-      doctor_email: doctorEmail
+    const ejecutarGuardado = async (saldoActual) => {
+      const nuevoEvento = {
+        fecha: new Date().toISOString(),
+        numero_ficha: fichaParaGuardar,
+        numero_acta_movimiento: numeroActa || 'Sin Acta',
+        nombre_comun: nombreComun,
+        nombre_cientifico: nombreCientifico,
+        numero_ejemplar: parseInt(cantidad),
+        tipo_evento: tipoEvento,
+        categoria_evento: categoriaEvento,
+        saldo_anterior: saldoAnterior,
+        saldo_actual: saldoActual,
+        destino: destino,
+        observacion: observacion || 'Sin observaciones',
+        doctor_email: doctorEmail
+      };
+
+      try {
+        await guardarEvento(nuevoEvento);
+        mostrarAlerta(`¡Operación Exitosa! Ficha ${fichaParaGuardar} guardada correctamente.`);
+        
+        // Limpiar Formulario y recargar datos
+        setNombreComun('');
+        setNombreCientifico('');
+        setObservacion('');
+        setCantidad(1);
+        setNumeroActa('');
+        setNumeroFichaSeleccionada('');
+        await cargarDatos();
+      } catch (error) {
+        mostrarAlerta("Hubo un error al guardar el registro en la base de datos.");
+      }
     };
 
-    try {
-      await guardarEvento(nuevoEvento);
-      alert(`¡Operación Exitosa! Ficha ${fichaParaGuardar} guardada correctamente.`);
-      
-      // Limpiar Formulario y recargar datos
-      setNombreComun('');
-      setNombreCientifico('');
-      setObservacion('');
-      setCantidad(1);
-      setNumeroActa('');
-      setNumeroFichaSeleccionada('');
-      await cargarDatos();
-    } catch (error) {
-      alert("Hubo un error al guardar el registro en la base de datos.");
+    if (tipoEvento === 'Egreso' && parseInt(cantidad) > saldoAnterior) {
+      mostrarConfirmacion(`¡Atención! Estás egresando ${cantidad} ejemplares pero el inventario registra solo ${saldoAnterior}. ¿Deseas continuar?`, () => ejecutarGuardado(saldoActualCalculado));
+    } else {
+      ejecutarGuardado(saldoActualCalculado);
     }
   };
 
@@ -413,6 +447,9 @@ function App() {
   const descargarPDF = () => {
     try {
       console.log("Iniciando descargarPDF...");
+      if (registrosFiltrados.length === 0) {
+        return mostrarAlerta("No hay registros para exportar con los filtros actuales.");
+      }
       const doc = new jsPDF('l', 'pt', 'a4');
       const añoActual = new Date().getFullYear();
       let tituloPDF = "Reporte de Registros CEREFAS";
@@ -548,8 +585,8 @@ function App() {
       doc.save(nombreArchivo);
       console.log("PDF generado con éxito:", nombreArchivo);
     } catch (error) {
-      console.error("Error al generar el PDF:", error);
-      alert("Error al generar el PDF: " + error.message);
+      console.error("Error generating PDF", error);
+      mostrarAlerta("Error al generar el PDF: " + error.message);
     }
   };
 
@@ -573,11 +610,11 @@ function App() {
         destino: registroSeleccionado.destino,
         observacion: registroSeleccionado.observacion
       });
-      alert('Cambios guardados con éxito.');
+      mostrarAlerta('Cambios guardados con éxito.');
       cerrarModal();
       await cargarDatos();
     } catch (err) {
-      alert('Error al guardar: ' + err.message);
+      mostrarAlerta('Error al guardar: ' + err.message);
     }
   };
 
@@ -982,6 +1019,39 @@ function App() {
                           <button type="button" onClick={handleEliminarEspecie} style={{ backgroundColor: 'var(--danger)', color: 'white', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>Eliminar Especie Permanentemente</button>
                         </div>
                         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: '1.4' }}>⚠️ <strong>Advertencia:</strong> Eliminar una especie borrará permanentemente de la base de datos todos los registros médicos y pacientes asociados a ella. Úsalo <strong>solo</strong> para corregir especies ingresadas por error o mal escritas.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* POP-UP CUSTOM (NOTIFICACIONES / REEMPLAZO DE ALERT Y CONFIRM) */}
+                {notificacion.visible && (
+                  <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '15px' }} onClick={notificacion.onCancel || notificacion.onConfirm}>
+                    <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', width: '100%', maxWidth: '400px', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', textAlign: 'center', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                      <div style={{ fontSize: '44px', marginBottom: '15px' }}>
+                        {notificacion.tipo === 'alerta' ? 'ℹ️' : '⚠️'}
+                      </div>
+                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '15px' }}>
+                        {notificacion.tipo === 'alerta' ? 'Aviso Importante' : 'Confirmar Acción'}
+                      </h3>
+                      <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '25px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                        {notificacion.mensaje}
+                      </p>
+                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        {notificacion.tipo === 'confirmacion' && (
+                          <button 
+                            onClick={notificacion.onCancel}
+                            style={{ padding: '12px 20px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', fontWeight: 'bold', cursor: 'pointer', flex: 1, transition: 'all 0.2s' }}
+                          >
+                            Cancelar
+                          </button>
+                        )}
+                        <button 
+                          onClick={notificacion.onConfirm}
+                          style={{ padding: '12px 20px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 'bold', cursor: 'pointer', flex: 1, transition: 'all 0.2s' }}
+                        >
+                          {notificacion.tipo === 'alerta' ? 'Entendido' : 'Aceptar'}
+                        </button>
                       </div>
                     </div>
                   </div>
