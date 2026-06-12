@@ -167,7 +167,6 @@ function App() {
       const especieUpper = nombreComun ? nombreComun.toUpperCase() : '';
       if (especieUpper && diccionarioAnimales[especieUpper]) {
         setNombreCientifico(diccionarioAnimales[especieUpper].cientifico);
-        setDestino(diccionarioAnimales[especieUpper].destino);
       }
     }
   }, [nombreComun, tipoEvento]);
@@ -199,7 +198,7 @@ function App() {
     setObservacion('');
     setCantidad(1);
     setNumeroActa('');
-    setDestino(tipo === 'Ingreso' ? 'Rehabilitación' : '');
+    setDestino('');
   };
 
   // Agregar Nueva Especie
