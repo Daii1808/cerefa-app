@@ -336,7 +336,10 @@ function App() {
 
       try {
         await guardarEvento(nuevoEvento);
-        mostrarAlerta(`¡Operación Exitosa! Ficha ${fichaParaGuardar} guardada correctamente.`);
+        const mensajeExito = tipoEvento === 'Ingreso' 
+          ? `¡Operación Exitosa! Ingreso de Ficha ${fichaParaGuardar} guardado correctamente.`
+          : `¡Operación Exitosa! Egreso de Ficha ${fichaParaGuardar} guardado correctamente.`;
+        mostrarAlerta(mensajeExito);
         
         // Limpiar Formulario y recargar datos
         setNombreComun('');
