@@ -40,6 +40,17 @@ function App() {
   const [activeTab, setActiveTab] = useState('registro'); // 'registro', 'inventario', 'metricas'
   const [registros, setRegistros] = useState([]);
   const [cargandoDatos, setCargandoDatos] = useState(false);
+
+  // Tema (Día/Noche)
+  const [theme, setTheme] = useState('day');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'day' ? 'night' : 'day');
+  };
   
   // Filtro de búsqueda para Inventario
   const [buscarInventario, setBuscarInventario] = useState('');
@@ -551,7 +562,7 @@ function App() {
                 alt="Logo CEREFA" 
                 className="marcador-logo"
               />
-              <h2 style={{ color: '#ffffff', fontSize: '26px', fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-0.5px' }}>
+              <h2 style={{ color: 'var(--text-primary)', fontSize: '26px', fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-0.5px' }}>
                 ACCESO CEREFAS
               </h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '5px' }}>
@@ -618,9 +629,14 @@ function App() {
                   <strong style={{ color: 'var(--primary)' }}>{doctorEmail}</strong>
                 </div>
               </div>
-              <button onClick={manejarLogout} className="btn-logout">
-                Cerrar Sesión
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={toggleTheme} className="btn-logout" style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+                  {theme === 'day' ? '🌙 Modo Noche' : '☀️ Modo Día'}
+                </button>
+                <button onClick={manejarLogout} className="btn-logout">
+                  Cerrar Sesión
+                </button>
+              </div>
             </div>
 
             {/* Pestañas de Navegación del Dashboard */}
@@ -887,24 +903,24 @@ function App() {
                     </div>
                     
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-                      <select value={filtroSemestre} onChange={(e) => setFiltroSemestre(e.target.value)} className="select-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto', backgroundColor: '#09090b' }}>
+                      <select value={filtroSemestre} onChange={(e) => setFiltroSemestre(e.target.value)} className="select-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto' }}>
                         <option value="">Todos los Semestres</option>
                         <option value="S1">1° Semestre (Ene - Jun)</option>
                         <option value="S2">2° Semestre (Jul - Dic)</option>
                       </select>
                       
                       <div className="buscador-wrapper" style={{ margin: 0, flex: 1, minWidth: '150px', maxWidth: '200px' }}>
-                        <input type="text" placeholder="Busca..." value={filtroGeneral} onChange={(e) => setFiltroGeneral(e.target.value)} className="input-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', backgroundColor: 'rgba(39, 39, 42, 0.5)' }} />
+                        <input type="text" placeholder="Busca..." value={filtroGeneral} onChange={(e) => setFiltroGeneral(e.target.value)} className="input-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px' }} />
                       </div>
                       
-                      <input type="text" placeholder="Fecha (rango)" value={filtroFecha} onChange={(e) => setFiltroFecha(e.target.value)} className="input-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto', backgroundColor: '#09090b' }} />
+                      <input type="text" placeholder="Fecha (rango)" value={filtroFecha} onChange={(e) => setFiltroFecha(e.target.value)} className="input-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto' }} />
                       
-                      <select value={filtroEspecie} onChange={(e) => setFiltroEspecie(e.target.value)} className="select-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto', backgroundColor: '#09090b' }}>
+                      <select value={filtroEspecie} onChange={(e) => setFiltroEspecie(e.target.value)} className="select-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto' }}>
                         <option value="">Filtro por Especie</option>
                         {Object.keys(diccionarioAnimales).map(animal => <option key={animal} value={animal}>{animal}</option>)}
                       </select>
                       
-                      <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="select-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto', backgroundColor: '#09090b' }}>
+                      <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="select-cerefa" style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '20px', width: 'auto' }}>
                         <option value="">Filtro por Tipo</option>
                         <option value="Ingreso">Ingreso</option>
                         <option value="Egreso">Egreso</option>
@@ -940,7 +956,7 @@ function App() {
                           </tr>
                         ) : (
                           registrosFiltrados.map((reg, index) => (
-                            <tr key={reg.id || index} onClick={() => abrirModal(reg)} style={{ cursor: 'pointer' }} className="hover:bg-zinc-800 transition-colors">
+                            <tr key={reg.id || index} onClick={() => abrirModal(reg)} style={{ cursor: 'pointer' }}>
                               <td>
                                 <span className="table-ficha">
                                   {reg.numero_ficha || 'F-000-0000'}
@@ -958,7 +974,7 @@ function App() {
                                 <div className="table-especie">{reg.nombre_comun}</div>
                                 <div className="table-cientifico">{reg.nombre_cientifico}</div>
                               </td>
-                              <td style={{ textAlign: 'center', fontWeight: '800', color: '#ffffff', fontSize: '15px' }}>
+                              <td style={{ textAlign: 'center', fontWeight: '800', color: 'var(--text-primary)', fontSize: '15px' }}>
                                 {reg.numero_ejemplar}
                               </td>
                               <td>
@@ -982,53 +998,53 @@ function App() {
                 {/* MODAL FICHA DE EDICIÓN */}
                 {modalAbierto && registroSeleccionado && (
                   <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '15px' }} onClick={cerrarModal}>
-                    <div style={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '12px', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
-                      <button type="button" onClick={cerrarModal} style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10, color: '#71717a', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+                    <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                      <button type="button" onClick={cerrarModal} style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10, color: 'var(--text-muted)', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>✕</button>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px', borderBottom: '1px solid #27272a' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px', borderBottom: '1px solid var(--border-color)' }}>
                         <div style={{ backgroundColor: 'rgba(6, 78, 59, 0.5)', padding: '6px', borderRadius: '50%', border: '1px solid rgba(4, 120, 87, 0.5)', fontSize: '16px' }}>📋</div>
                         <div>
-                          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: 'white' }}>{registroSeleccionado.numero_ficha || 'F-XXX'}</h3>
+                          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{registroSeleccionado.numero_ficha || 'F-XXX'}</h3>
                           <p style={{ margin: 0, fontSize: '12px', fontFamily: 'monospace', color: registroSeleccionado.tipo_evento === 'Ingreso' ? '#34d399' : '#fb923c' }}>{registroSeleccionado.tipo_evento}</p>
                         </div>
                       </div>
 
                       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
-                        <div style={{ backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #27272a' }}>
-                          <span style={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase' }}>Paciente</span>
-                          <strong style={{ display: 'block', color: 'white', fontSize: '14px' }}>{registroSeleccionado.nombre_comun || '-'}</strong>
-                          <p style={{ margin: 0, fontSize: '11px', fontStyle: 'italic', color: '#a1a1aa' }}>{registroSeleccionado.nombre_cientifico || '-'}</p>
+                        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>Paciente</span>
+                          <strong style={{ display: 'block', color: 'var(--text-primary)', fontSize: '14px' }}>{registroSeleccionado.nombre_comun || '-'}</strong>
+                          <p style={{ margin: 0, fontSize: '11px', fontStyle: 'italic', color: 'var(--text-secondary)' }}>{registroSeleccionado.nombre_cientifico || '-'}</p>
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                          <div style={{ backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #27272a' }}>
-                            <span style={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase' }}>Fecha</span>
-                            <input type="text" value={registroSeleccionado.fecha || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, fecha: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid #059669' : 'none', color: 'white', fontSize: '12px', outline: 'none' }} />
+                          <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>Fecha</span>
+                            <input type="text" value={registroSeleccionado.fecha || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, fecha: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid var(--primary)' : 'none', color: 'var(--text-primary)', fontSize: '12px', outline: 'none' }} />
                           </div>
-                          <div style={{ backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #27272a' }}>
-                            <span style={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase' }}>N° Acta</span>
-                            <input type="text" value={registroSeleccionado.numero_acta_movimiento || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, numero_acta_movimiento: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid #059669' : 'none', color: 'white', fontSize: '12px', outline: 'none' }} />
+                          <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>N° Acta</span>
+                            <input type="text" value={registroSeleccionado.numero_acta_movimiento || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, numero_acta_movimiento: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid var(--primary)' : 'none', color: 'var(--text-primary)', fontSize: '12px', outline: 'none' }} />
                           </div>
                         </div>
 
-                        <div style={{ backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #27272a' }}>
-                          <span style={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase' }}>Destino</span>
-                          <input type="text" value={registroSeleccionado.destino || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, destino: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid #059669' : 'none', color: 'white', fontSize: '12px', outline: 'none' }} />
+                        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>Destino</span>
+                          <input type="text" value={registroSeleccionado.destino || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, destino: e.target.value})} disabled={!modoEdicion} style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid var(--primary)' : 'none', color: 'var(--text-primary)', fontSize: '12px', outline: 'none' }} />
                         </div>
 
-                        <div style={{ backgroundColor: '#09090b', padding: '6px 8px', borderRadius: '6px', border: '1px solid #27272a' }}>
-                          <span style={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase' }}>Observaciones</span>
-                          <textarea value={registroSeleccionado.observacion || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, observacion: e.target.value})} disabled={!modoEdicion} rows="2" style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid #059669' : 'none', color: 'white', fontSize: '12px', outline: 'none', resize: 'none' }} />
+                        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase' }}>Observaciones</span>
+                          <textarea value={registroSeleccionado.observacion || ''} onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, observacion: e.target.value})} disabled={!modoEdicion} rows="2" style={{ width: '100%', background: 'transparent', border: modoEdicion ? '1px solid var(--primary)' : 'none', color: 'var(--text-primary)', fontSize: '12px', outline: 'none', resize: 'none' }} />
                         </div>
                       </div>
 
-                      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #27272a' }}>
+                      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid var(--border-color)' }}>
                         {!modoEdicion ? (
                           <button onClick={() => setModoEdicion(true)} style={{ width: '100%', backgroundColor: '#b45309', color: 'white', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Modificar</button>
                         ) : (
                           <button onClick={guardarCambiosModal} style={{ width: '100%', backgroundColor: '#047857', color: 'white', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Guardar cambios</button>
                         )}
-                        <button onClick={cerrarModal} style={{ width: '100%', backgroundColor: '#27272a', color: 'white', border: 'none', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}>Cerrar</button>
+                        <button onClick={cerrarModal} style={{ width: '100%', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}>Cerrar</button>
                       </div>
                     </div>
                   </div>
@@ -1093,38 +1109,38 @@ function App() {
                   {/* MODAL FICHAS ACTIVAS */}
                   {modalActivosAbierto && (
                     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: '16px' }} onClick={() => setModalActivosAbierto(false)}>
-                      <div style={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #27272a', paddingBottom: '16px', marginBottom: '16px' }}>
+                      <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{ backgroundColor: 'rgba(6, 78, 59, 0.5)', padding: '12px', borderRadius: '50%', border: '1px solid rgba(4, 120, 87, 0.5)', fontSize: '24px' }}>🩺</div>
                             <div>
-                              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: 'white' }}>{especieModalActivos}</h3>
+                              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{especieModalActivos}</h3>
                               <p style={{ margin: 0, fontSize: '14px', fontFamily: 'monospace', color: '#34d399' }}>Pacientes actualmente en el centro</p>
                             </div>
                           </div>
-                          <button onClick={() => setModalActivosAbierto(false)} style={{ color: '#71717a', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                          <button onClick={() => setModalActivosAbierto(false)} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
                         </div>
                         
                         <div style={{ overflowY: 'auto', paddingRight: '8px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                           {getFichasPorEspecie(especieModalActivos).length === 0 ? (
-                            <p style={{ color: '#71717a', textAlign: 'center', fontStyle: 'italic', padding: '16px 0' }}>No se encontraron detalles de las fichas para esta especie.</p>
+                            <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontStyle: 'italic', padding: '16px 0' }}>No se encontraron detalles de las fichas para esta especie.</p>
                           ) : (
                             getFichasPorEspecie(especieModalActivos).map(p => (
-                              <div key={p.numero_ficha} style={{ backgroundColor: '#09090b', padding: '16px', borderRadius: '8px', border: '1px solid #27272a', transition: 'border-color 0.2s' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #27272a', paddingBottom: '8px' }}>
+                              <div key={p.numero_ficha} style={{ backgroundColor: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', transition: 'border-color 0.2s' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
                                   <span style={{ color: '#34d399', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '18px' }}>{p.numero_ficha}</span>
-                                  <span style={{ backgroundColor: '#27272a', color: '#d4d4d8', fontSize: '12px', padding: '4px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>Saldo: {p.saldo_actual}</span>
+                                  <span style={{ backgroundColor: 'var(--border-color)', color: 'var(--text-primary)', fontSize: '12px', padding: '4px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>Saldo: {p.saldo_actual}</span>
                                 </div>
                                 <div>
-                                  <span style={{ color: '#71717a', display: 'block', fontSize: '12px', textTransform: 'uppercase', marginBottom: '4px' }}>Observación Actual</span>
-                                  <p style={{ color: 'white', fontSize: '14px', margin: 0 }}>{p.observacion}</p>
+                                  <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '12px', textTransform: 'uppercase', marginBottom: '4px' }}>Observación Actual</span>
+                                  <p style={{ color: 'var(--text-primary)', fontSize: '14px', margin: 0 }}>{p.observacion}</p>
                                 </div>
                               </div>
                             ))
                           )}
                         </div>
 
-                        <button onClick={() => setModalActivosAbierto(false)} style={{ marginTop: '24px', width: '100%', backgroundColor: '#27272a', color: 'white', fontWeight: 'bold', padding: '12px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>Cerrar</button>
+                        <button onClick={() => setModalActivosAbierto(false)} style={{ marginTop: '24px', width: '100%', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', fontWeight: 'bold', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', cursor: 'pointer' }}>Cerrar</button>
                       </div>
                     </div>
                   )}
@@ -1167,7 +1183,7 @@ function App() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
                     {/* Gráfico 1: Tasa de Éxito y Destino de Egresos */}
                     <div>
-                      <h3 style={{ fontSize: '16px', color: '#ffffff', marginBottom: '15px', fontWeight: '600' }}>Destinos de Egresos (%)</h3>
+                      <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '15px', fontWeight: '600' }}>Destinos de Egresos (%)</h3>
                       <div className="bar-chart-container">
                         <div className="chart-bar-item">
                           <div className="chart-bar-header">
@@ -1211,7 +1227,7 @@ function App() {
 
                     {/* Gráfico 2: Origen / Categoría de Eventos */}
                     <div>
-                      <h3 style={{ fontSize: '16px', color: '#ffffff', marginBottom: '15px', fontWeight: '600' }}>Categorías de Ingreso (%)</h3>
+                      <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '15px', fontWeight: '600' }}>Categorías de Ingreso (%)</h3>
                       <div className="bar-chart-container">
                         <div className="chart-bar-item">
                           <div className="chart-bar-header">
