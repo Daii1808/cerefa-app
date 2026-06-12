@@ -120,7 +120,7 @@ function App() {
   const [cantidad, setCantidad] = useState(1);
   const [observacion, setObservacion] = useState('');
   const [categoriaEvento, setCategoriaEvento] = useState(''); // ej. 'SAG Puerto Montt'
-  const [destino, setDestino] = useState('Rehabilitación'); // 'Rehabilitación', 'Clínica', 'Liberación', 'Fallecido'
+  const [destino, setDestino] = useState(''); // 'Rehabilitación', 'Clínica', 'Liberación', 'Fallecido'
   const [numeroActa, setNumeroActa] = useState('');
   const [numeroFichaSeleccionada, setNumeroFichaSeleccionada] = useState(''); // Para Egresos
 
@@ -354,6 +354,7 @@ function App() {
         setCantidad(1);
         setNumeroActa('');
         setNumeroFichaSeleccionada('');
+        setDestino('');
         await cargarDatos();
       } catch (error) {
         mostrarAlerta("Hubo un error al guardar el registro en la base de datos.");
