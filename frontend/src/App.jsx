@@ -974,7 +974,7 @@ function App() {
                           <button 
                             type="button" 
                             onClick={() => setModalEspeciesAbierto(true)}
-                            style={{ backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', width: '46px', height: '46px', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+                            style={{ backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', width: '46px', height: '46px', minWidth: '46px', flexShrink: 0, fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
                             title="Gestionar Especies"
                           >
                             +
@@ -1037,7 +1037,7 @@ function App() {
                           <button 
                             type="button" 
                             onClick={() => setModalCategoriasAbierto(true)}
-                            style={{ backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', width: '46px', height: '46px', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+                            style={{ backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', width: '46px', height: '46px', minWidth: '46px', flexShrink: 0, fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
                             title="Gestionar Categorías"
                           >
                             +
@@ -1072,7 +1072,7 @@ function App() {
                         <button 
                           type="button" 
                           onClick={() => setModalDestinosAbierto(true)}
-                          style={{ backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', width: '46px', height: '46px', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+                          style={{ backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', width: '46px', height: '46px', minWidth: '46px', flexShrink: 0, fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
                           title="Gestionar Destinos"
                         >
                           +
