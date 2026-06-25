@@ -958,12 +958,12 @@ function App() {
                     <div className="grupo-campo">
                       <label>Especie (Nombre Común)</label>
                       {tipoEvento === 'Ingreso' ? (
-                        <div style={{ display: 'flex', gap: '10px' }}>
+                        <div style={{ display: 'flex', gap: '10px', minWidth: 0 }}>
                           <select 
                             value={nombreComun} 
                             onChange={(e) => setNombreComun(e.target.value)} 
                             className="select-cerefa"
-                            style={{ flex: 1, height: '46px' }}
+                            style={{ flex: 1, height: '46px', minWidth: 0 }}
                             required
                           >
                             <option value="">-- Selecciona una Especie --</option>
@@ -1021,12 +1021,12 @@ function App() {
                     <div className="grupo-campo">
                       <label>Categoría del Evento</label>
                       {tipoEvento === 'Ingreso' ? (
-                        <div style={{ display: 'flex', gap: '10px' }}>
+                        <div style={{ display: 'flex', gap: '10px', minWidth: 0 }}>
                           <select 
                             value={categoriaEvento} 
                             onChange={(e) => setCategoriaEvento(e.target.value)} 
                             className="select-cerefa"
-                            style={{ flex: 1, height: '46px' }}
+                            style={{ flex: 1, height: '46px', minWidth: 0 }}
                             required
                           >
                             <option value="">-- Selecciona una Categoría --</option>
@@ -1056,12 +1056,12 @@ function App() {
                     {/* Destino */}
                     <div className="grupo-campo">
                       <label>Destino o Estado</label>
-                      <div style={{ display: 'flex', gap: '10px' }}>
+                      <div style={{ display: 'flex', gap: '10px', minWidth: 0 }}>
                         <select 
                           value={destino} 
                           onChange={(e) => setDestino(e.target.value)} 
                           className="select-cerefa"
-                          style={{ flex: 1, height: '46px' }}
+                          style={{ flex: 1, height: '46px', minWidth: 0 }}
                           required
                         >
                           <option value="">-- Selecciona un Destino --</option>
