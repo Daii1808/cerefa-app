@@ -124,6 +124,32 @@ function App() {
   const [numeroActa, setNumeroActa] = useState('');
   const [numeroFichaSeleccionada, setNumeroFichaSeleccionada] = useState(''); // Para Egresos
 
+  // Estados para Categorías y Destinos
+  const [listaCategorias, setListaCategorias] = useState([
+    "SAG Puerto Montt",
+    "SAG Puerto Varas",
+    "SAG Osorno",
+    "SAG Río Negro",
+    "Particular",
+    "Rescate CEREFAS",
+    "Entrega Voluntaria"
+  ]);
+  const [modalCategoriasAbierto, setModalCategoriasAbierto] = useState(false);
+  const [nuevaCategoria, setNuevaCategoria] = useState('');
+  const [categoriaAEliminar, setCategoriaAEliminar] = useState('');
+
+  const [listaDestinos, setListaDestinos] = useState([
+    "Rehabilitación",
+    "Clínica",
+    "Ingreso",
+    "Liberado",
+    "Fallece",
+    "Eutanasia"
+  ]);
+  const [modalDestinosAbierto, setModalDestinosAbierto] = useState(false);
+  const [nuevoDestino, setNuevoDestino] = useState('');
+  const [destinoAEliminar, setDestinoAEliminar] = useState('');
+
   // Cargar registros médicos al iniciar
   const cargarDatos = async () => {
     setCargandoDatos(true);
@@ -148,6 +174,28 @@ function App() {
             }
           });
           return nuevoDict;
+        });
+      }
+
+      // Enriquecer categorías y destinos con los guardados
+      if (datos && datos.length > 0) {
+        setListaCategorias(prevCats => {
+          const catsSet = new Set(prevCats);
+          datos.forEach(r => {
+            if (r.categoria_evento && r.categoria_evento.trim()) {
+              catsSet.add(r.categoria_evento.trim());
+            }
+          });
+          return Array.from(catsSet);
+        });
+        setListaDestinos(prevDests => {
+          const destsSet = new Set(prevDests);
+          datos.forEach(r => {
+            if (r.destino && r.destino.trim()) {
+              destsSet.add(r.destino.trim());
+            }
+          });
+          return Array.from(destsSet);
         });
       }
     } catch (error) {
@@ -249,6 +297,58 @@ function App() {
     });
   };
 
+  // Agregar Nueva Categoría
+  const handleAgregarCategoria = () => {
+    if (!nuevaCategoria.trim()) return mostrarAlerta("Por favor escribe el nombre de la categoría.");
+    const cat = nuevaCategoria.trim();
+    if (listaCategorias.includes(cat)) {
+      return mostrarAlerta("La categoría ya existe.");
+    }
+    setListaCategorias(prev => [...prev, cat]);
+    setCategoriaEvento(cat);
+    setNuevaCategoria('');
+    setModalCategoriasAbierto(false);
+  };
+
+  // Eliminar Categoría
+  const handleEliminarCategoria = () => {
+    if (!categoriaAEliminar) return mostrarAlerta("Selecciona una categoría a eliminar.");
+    mostrarConfirmacion(`¿Estás seguro de que deseas eliminar la categoría "${categoriaAEliminar}" de la lista?`, () => {
+      setListaCategorias(prev => prev.filter(c => c !== categoriaAEliminar));
+      if (categoriaEvento === categoriaAEliminar) {
+        setCategoriaEvento('');
+      }
+      setCategoriaAEliminar('');
+      setModalCategoriasAbierto(false);
+    });
+  };
+
+  // Agregar Nuevo Destino
+  const handleAgregarDestino = () => {
+    if (!nuevoDestino.trim()) return mostrarAlerta("Por favor escribe el nombre del destino/estado.");
+    const dest = nuevoDestino.trim();
+    if (listaDestinos.includes(dest)) {
+      return mostrarAlerta("El destino/estado ya existe.");
+    }
+    setListaDestinos(prev => [...prev, dest]);
+    setDestino(dest);
+    setNuevoDestino('');
+    setModalDestinosAbierto(false);
+  };
+
+  // Eliminar Destino
+  const handleEliminarDestino = () => {
+    if (!destinoAEliminar) return mostrarAlerta("Selecciona un destino/estado a eliminar.");
+    mostrarConfirmacion(`¿Estás seguro de que deseas eliminar el destino/estado "${destinoAEliminar}" de la lista?`, () => {
+      setListaDestinos(prev => prev.filter(d => d !== destinoAEliminar));
+      if (destino === destinoAEliminar) {
+        setDestino('');
+      }
+      setDestinoAEliminar('');
+      setModalDestinosAbierto(false);
+    });
+  };
+
   // Manejar Login Médico
   const manejarLogin = async (e) => {
     e.preventDefault();
@@ -305,7 +405,7 @@ function App() {
         r.fecha && r.fecha.startsWith(anioActual.toString())
       );
       const correlativo = ingresosAnio.length + 1;
-      fichaParaGuardar = `F-${String(correlativo).padStart(3, '0')}-${anioActual}`;
+      fichaParaGuardar = `${anioActual}-${String(correlativo).padStart(3, '0')}`;
     } else {
       fichaParaGuardar = numeroFichaSeleccionada;
     }
@@ -469,7 +569,7 @@ function App() {
       doc.text(tituloPDF, 40, 40);
 
       const columnas = [
-        "FECHA", "Nº ficha", "Nombre comun", "Nombre científico", 
+        "FECHA", "N° de ficha", "Nombre comun", "Nombre científico", 
         "Nº Acta", "Cant.", "Tipo de evento", "Categoría", 
         "Saldo anterior", "Saldo actual", "Destino", "Observaciones"
       ];
@@ -921,25 +1021,28 @@ function App() {
                     <div className="grupo-campo">
                       <label>Categoría del Evento</label>
                       {tipoEvento === 'Ingreso' ? (
-                        <>
-                          <input 
-                            list="lista_categorias"
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <select 
                             value={categoriaEvento} 
                             onChange={(e) => setCategoriaEvento(e.target.value)} 
-                            className="input-cerefa"
-                            placeholder="Ej: SAG Río Negro"
+                            className="select-cerefa"
+                            style={{ flex: 1 }}
                             required
-                          />
-                          <datalist id="lista_categorias">
-                            <option value="SAG Puerto Montt" />
-                            <option value="SAG Puerto Varas" />
-                            <option value="SAG Osorno" />
-                            <option value="SAG Río Negro" />
-                            <option value="Particular" />
-                            <option value="Rescate CEREFAS" />
-                            <option value="Entrega Voluntaria" />
-                          </datalist>
-                        </>
+                          >
+                            <option value="">-- Selecciona una Categoría --</option>
+                            {listaCategorias.sort().map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                          <button 
+                            type="button" 
+                            onClick={() => setModalCategoriasAbierto(true)}
+                            style={{ backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', width: '46px', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+                            title="Gestionar Categorías"
+                          >
+                            +
+                          </button>
+                        </div>
                       ) : (
                         <input 
                           type="text" 
@@ -953,23 +1056,28 @@ function App() {
                     {/* Destino */}
                     <div className="grupo-campo">
                       <label>Destino o Estado</label>
-                      <input 
-                        list="lista_destinos"
-                        value={destino} 
-                        onChange={(e) => setDestino(e.target.value)} 
-                        className="input-cerefa"
-                        placeholder="Ej: Rehabilitación / Liberado / Fallece"
-                        required
-                        autoComplete="off"
-                      />
-                      <datalist id="lista_destinos">
-                        <option value="Rehabilitación" />
-                        <option value="Clínica" />
-                        <option value="Ingreso" />
-                        <option value="Liberado" />
-                        <option value="Fallece" />
-                        <option value="Eutanasia" />
-                      </datalist>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <select 
+                          value={destino} 
+                          onChange={(e) => setDestino(e.target.value)} 
+                          className="select-cerefa"
+                          style={{ flex: 1 }}
+                          required
+                        >
+                          <option value="">-- Selecciona un Destino --</option>
+                          {listaDestinos.sort().map(dest => (
+                            <option key={dest} value={dest}>{dest}</option>
+                          ))}
+                        </select>
+                        <button 
+                          type="button" 
+                          onClick={() => setModalDestinosAbierto(true)}
+                          style={{ backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', width: '46px', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+                          title="Gestionar Destinos"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
 
                     {/* Número de Acta */}
@@ -1034,6 +1142,70 @@ function App() {
                           <button type="button" onClick={handleEliminarEspecie} style={{ backgroundColor: 'var(--danger)', color: 'white', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>Eliminar Especie Permanentemente</button>
                         </div>
                         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: '1.4' }}>⚠️ <strong>Advertencia:</strong> Eliminar una especie borrará permanentemente de la base de datos todos los registros médicos y pacientes asociados a ella. Úsalo <strong>solo</strong> para corregir especies ingresadas por error o mal escritas.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* MODAL GESTOR DE CATEGORÍAS */}
+                {modalCategoriasAbierto && (
+                  <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70, padding: '15px' }} onClick={() => setModalCategoriasAbierto(false)}>
+                    <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                      <button type="button" onClick={() => setModalCategoriasAbierto(false)} style={{ position: 'absolute', top: '16px', right: '16px', color: 'var(--text-muted)', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                      
+                      <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Gestión de Categorías de Evento</h2>
+                      
+                      <div style={{ marginBottom: '30px' }}>
+                        <h3 style={{ fontSize: '14px', color: 'var(--primary)', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>➕ Agregar Nueva Categoría</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <input type="text" placeholder="Categoría (Ej: SAG Río Negro)" value={nuevaCategoria} onChange={e => setNuevaCategoria(e.target.value)} className="input-cerefa" />
+                          <button type="button" onClick={handleAgregarCategoria} style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>Guardar y Usar Categoría</button>
+                        </div>
+                      </div>
+
+                      <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                        <h3 style={{ fontSize: '14px', color: 'var(--danger)', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>🗑️ Eliminar Categoría</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <select value={categoriaAEliminar} onChange={e => setCategoriaAEliminar(e.target.value)} className="select-cerefa">
+                            <option value="">-- Selecciona categoría a eliminar --</option>
+                            {listaCategorias.sort().map(cat => (
+                              <option key={`del-cat-${cat}`} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                          <button type="button" onClick={handleEliminarCategoria} style={{ backgroundColor: 'var(--danger)', color: 'white', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>Eliminar Categoría de la Lista</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* MODAL GESTOR DE DESTINOS */}
+                {modalDestinosAbierto && (
+                  <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70, padding: '15px' }} onClick={() => setModalDestinosAbierto(false)}>
+                    <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                      <button type="button" onClick={() => setModalDestinosAbierto(false)} style={{ position: 'absolute', top: '16px', right: '16px', color: 'var(--text-muted)', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+                      
+                      <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Gestión de Destinos / Estados</h2>
+                      
+                      <div style={{ marginBottom: '30px' }}>
+                        <h3 style={{ fontSize: '14px', color: 'var(--primary)', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>➕ Agregar Nuevo Destino/Estado</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <input type="text" placeholder="Destino/Estado (Ej: Liberado)" value={nuevoDestino} onChange={e => setNuevoDestino(e.target.value)} className="input-cerefa" />
+                          <button type="button" onClick={handleAgregarDestino} style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>Guardar y Usar Destino</button>
+                        </div>
+                      </div>
+
+                      <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                        <h3 style={{ fontSize: '14px', color: 'var(--danger)', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}>🗑️ Eliminar Destino/Estado</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <select value={destinoAEliminar} onChange={e => setDestinoAEliminar(e.target.value)} className="select-cerefa">
+                            <option value="">-- Selecciona destino a eliminar --</option>
+                            {listaDestinos.sort().map(dest => (
+                              <option key={`del-dest-${dest}`} value={dest}>{dest}</option>
+                            ))}
+                          </select>
+                          <button type="button" onClick={handleEliminarDestino} style={{ backgroundColor: 'var(--danger)', color: 'white', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>Eliminar Destino de la Lista</button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1111,7 +1283,7 @@ function App() {
                     <table className="tabla-cerefa">
                       <thead>
                         <tr>
-                          <th>Ficha</th>
+                          <th>N° de ficha</th>
                           <th>Fecha</th>
                           <th>Tipo</th>
                           <th>Especie / Científico</th>
@@ -1139,7 +1311,7 @@ function App() {
                             <tr key={reg.id || index} onClick={() => abrirModal(reg)} style={{ cursor: 'pointer' }}>
                               <td>
                                 <span className="table-ficha">
-                                  {reg.numero_ficha || 'F-000-0000'}
+                                  {reg.numero_ficha || '0000-000'}
                                 </span>
                               </td>
                               <td style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
@@ -1184,7 +1356,7 @@ function App() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px', borderBottom: '1px solid var(--border-color)' }}>
                         <div style={{ backgroundColor: 'rgba(6, 78, 59, 0.5)', padding: '6px', borderRadius: '50%', border: '1px solid rgba(4, 120, 87, 0.5)', fontSize: '16px' }}>📋</div>
                         <div>
-                          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{registroSeleccionado.numero_ficha || 'F-XXX'}</h3>
+                          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{registroSeleccionado.numero_ficha || 'YYYY-XXX'}</h3>
                           <p style={{ margin: 0, fontSize: '12px', fontFamily: 'monospace', color: registroSeleccionado.tipo_evento === 'Ingreso' ? '#34d399' : '#fb923c' }}>{registroSeleccionado.tipo_evento}</p>
                         </div>
                       </div>
@@ -1215,12 +1387,10 @@ function App() {
                               onChange={(e) => setRegistroSeleccionado({...registroSeleccionado, destino: e.target.value})} 
                               style={{ width: '100%', background: 'var(--bg-secondary)', border: '1px solid var(--primary)', color: 'var(--text-primary)', fontSize: '12px', outline: 'none', padding: '2px 0', borderRadius: '4px' }}
                             >
-                              <option value="Rehabilitación">Rehabilitación</option>
-                              <option value="Clínica">Clínica</option>
-                              <option value="Ingreso">Ingreso</option>
-                              <option value="Liberado">Liberado</option>
-                              <option value="Fallece">Fallece</option>
-                              <option value="Eutanasia">Eutanasia</option>
+                              <option value="">-- Selecciona un Destino --</option>
+                              {listaDestinos.sort().map(dest => (
+                                <option key={`edit-dest-${dest}`} value={dest}>{dest}</option>
+                              ))}
                             </select>
                           ) : (
                             <input type="text" value={registroSeleccionado.destino || ''} disabled style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '12px', outline: 'none' }} />

@@ -147,7 +147,7 @@ def registrar_evento(datos_form, usuario_email):
         nombre_cientifico = datos_form.get('nombre_cientifico', '').strip()
         resp_fichas = requests.get(f"{url}/rest/v1/registro_evento?fecha_creacion=gte.{anio_actual}-01-01T00:00:00&tipo_evento=eq.Ingreso&select=id", headers=headers)
         count_anio = len(resp_fichas.json()) if resp_fichas.status_code == 200 else 0
-        numero_ficha = f"F-{(count_anio + 1):03d}-{anio_actual}"
+        numero_ficha = f"{anio_actual}-{(count_anio + 1):03d}"
 
     saldo_anterior = 0
     resp_saldo = requests.get(

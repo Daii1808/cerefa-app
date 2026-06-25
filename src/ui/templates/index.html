@@ -42,7 +42,7 @@
 
         <div id="seccion_egreso" class="lg:col-span-2 flex flex-col justify-end hidden">
             <label class="text-xs text-orange-400 uppercase font-bold tracking-wider mb-1">🔍 N° Ficha del Paciente a Egresar</label>
-            <input type="text" id="ficha_existente" name="numero_ficha_existente" placeholder="Ej: F-001-2026" class="bg-zinc-950 border border-orange-700 p-3 rounded-lg text-sm focus:border-orange-500 outline-none w-full">
+            <input type="text" id="ficha_existente" name="numero_ficha_existente" placeholder="Ej: 2026-001" class="bg-zinc-950 border border-orange-700 p-3 rounded-lg text-sm focus:border-orange-500 outline-none w-full">
         </div>
        
         <div class="lg:col-span-1 grid grid-cols-2 gap-4">
@@ -144,7 +144,7 @@
     </div>
     <table class="w-full text-sm text-left">
         <thead class="text-zinc-500 uppercase border-b border-zinc-700 bg-zinc-950/50">
-            <tr><th class="py-3 px-2">Ficha</th><th class="py-3 px-2">Fecha</th><th class="py-3 px-2">Tipo</th><th class="py-3 px-2">Especie</th><th class="py-3 px-2 text-center">Cant</th><th class="py-3 px-2 text-center">Resp.</th></tr>
+            <tr><th class="py-3 px-2">N° de ficha</th><th class="py-3 px-2">Fecha</th><th class="py-3 px-2">Tipo</th><th class="py-3 px-2">Especie</th><th class="py-3 px-2 text-center">Cant</th><th class="py-3 px-2 text-center">Resp.</th></tr>
         </thead>
         <tbody class="divide-y divide-zinc-800">
             {% for r in lista %}
@@ -174,7 +174,7 @@
         <div class="flex items-center gap-2 px-4 pt-4 pb-2 border-b border-zinc-800 shrink-0">
             <div class="bg-emerald-900/50 p-1.5 rounded-full border border-emerald-700/50 text-base leading-none">📋</div>
             <div class="min-w-0 pr-6">
-                <h3 class="text-lg font-bold text-white truncate" id="modal_ficha_num">F-XXX-XXXX</h3>
+                <h3 class="text-lg font-bold text-white truncate" id="modal_ficha_num">YYYY-XXX</h3>
                 <p class="text-xs font-mono" id="modal_tipo">Ingreso</p>
             </div>
         </div>
@@ -256,7 +256,7 @@
 
         // Definir columnas exactamente como en el archivo Excel 'prueba.xlsx'
         const columnas = [
-            "FECHA", "Nº ficha", "Nombre comun", "Nombre científico", 
+            "FECHA", "N° de ficha", "Nombre comun", "Nombre científico", 
             "Nº Acta", "Cant.", "Tipo de evento", "Categoría", 
             "Saldo anterior", "Saldo actual", "Destino", "Observaciones"
         ];
