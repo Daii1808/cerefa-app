@@ -249,21 +249,57 @@ function App() {
     setDestino('');
   };
 
-  // Agregar Nueva Especie
+  // Función para normalizar texto eliminando espacios, acentos y mayúsculas
+  const normalizarCompara = (str) => {
+    if (!str) return '';
+    return str
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+      .replace(/\s+/g, ''); // Eliminar todos los espacios
+  };
+
+  // Agregar Nueva Especie con validaciones anti-duplicados estrictas
   const handleAgregarEspecie = () => {
-    if (!nuevaEspecieNombre || !nuevaEspecieCientifico) return mostrarAlerta("Completa ambos campos (Nombre común y Científico).");
-    mostrarConfirmacion(`¿Estás seguro de que el nombre "${nuevaEspecieNombre.toUpperCase()}" y el nombre científico "${nuevaEspecieCientifico}" están escritos correctamente?`, () => {
-      const especieUpper = nuevaEspecieNombre.toUpperCase();
+    if (!nuevaEspecieNombre || !nuevaEspecieCientifico) {
+      return mostrarAlerta("Completa ambos campos (Nombre común y Científico).");
+    }
+
+    const nombreComunLimpio = normalizarCompara(nuevaEspecieNombre);
+    const cientificoLimpio = normalizarCompara(nuevaEspecieCientifico);
+
+    // 1. Validar si ya existe una especie con el mismo nombre común (sin importar acentos, espacios o mayúsculas)
+    const especieDuplicadaNombre = Object.keys(diccionarioAnimales).find(
+      key => normalizarCompara(key) === nombreComunLimpio
+    );
+
+    if (especieDuplicadaNombre) {
+      return mostrarAlerta(`La especie "${especieDuplicadaNombre}" ya existe en el sistema con el nombre científico: "${diccionarioAnimales[especieDuplicadaNombre].cientifico}".`);
+    }
+
+    // 2. Validar si ya existe una especie con el mismo nombre científico (sin importar acentos, espacios o mayúsculas)
+    const especieDuplicadaCientifico = Object.keys(diccionarioAnimales).find(
+      key => normalizarCompara(diccionarioAnimales[key].cientifico) === cientificoLimpio
+    );
+
+    if (especieDuplicadaCientifico) {
+      return mostrarAlerta(`El nombre científico "${nuevaEspecieCientifico.trim()}" ya está registrado para la especie "${especieDuplicadaCientifico}".`);
+    }
+
+    mostrarConfirmacion(`¿Estás seguro de que el nombre "${nuevaEspecieNombre.trim().toUpperCase()}" y el nombre científico "${nuevaEspecieCientifico.trim()}" están escritos correctamente?`, () => {
+      const especieUpper = nuevaEspecieNombre.trim().toUpperCase();
+      const cientificoFormateado = nuevaEspecieCientifico.trim();
       setDiccionarioAnimales(prev => ({
         ...prev,
         [especieUpper]: {
-          cientifico: nuevaEspecieCientifico,
+          cientifico: cientificoFormateado,
           categoria: 'Otra',
           destino: 'Rehabilitación'
         }
       }));
       setNombreComun(especieUpper);
-      setNombreCientifico(nuevaEspecieCientifico);
+      setNombreCientifico(cientificoFormateado);
       setModalEspeciesAbierto(false);
       setNuevaEspecieNombre('');
       setNuevaEspecieCientifico('');

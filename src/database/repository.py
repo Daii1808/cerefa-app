@@ -1,6 +1,17 @@
 import os
 import requests
 import datetime
+import unicodedata
+import re
+
+def normalizar_compara_py(text):
+    if not text:
+        return ""
+    # Normalizar a NFD, eliminar diacríticos, pasar a minúsculas y quitar todos los espacios
+    text_normalized = unicodedata.normalize("NFD", text)
+    text_without_accents = "".join(c for c in text_normalized if unicodedata.category(c) != "Mn")
+    text_clean = re.sub(r"\s+", "", text_without_accents).lower()
+    return text_clean
 
 def get_supabase_headers():
     url = os.environ.get("SUPABASE_URL")
@@ -143,8 +154,52 @@ def registrar_evento(datos_form, usuario_email):
         else:
             raise Exception("Ficha no encontrada.")
     else:
-        nombre_comun = datos_form.get('nombre_comun', '').strip()
-        nombre_cientifico = datos_form.get('nombre_cientifico', '').strip()
+        # Formatear y estandarizar Nombre Común
+        raw_comun = datos_form.get('nombre_comun', '').strip()
+        nombre_comun = " ".join(raw_comun.split()).upper()
+
+        # Formatear y estandarizar Nombre Científico (ej: "Theristicus melanopis")
+        raw_cientifico = datos_form.get('nombre_cientifico', '').strip()
+        partes_cientifico = raw_cientifico.split()
+        if partes_cientifico:
+            partes_cientifico[0] = partes_cientifico[0].capitalize()
+            for idx in range(1, len(partes_cientifico)):
+                partes_cientifico[idx] = partes_cientifico[idx].lower()
+            nombre_cientifico = " ".join(partes_cientifico)
+        else:
+            nombre_cientifico = ""
+
+        if not nombre_comun or not nombre_cientifico:
+            raise Exception("Debes ingresar el Nombre Común y Científico para registrar un Ingreso.")
+
+        # VALIDACIÓN ANTI-DUPLICADOS ESTRICTA (Base de datos)
+        resp_search = requests.get(f"{url}/rest/v1/registro_evento?select=nombre_comun,nombre_cientifico", headers=headers)
+        if resp_search.status_code == 200:
+            especies_existentes = {}
+            for reg in resp_search.json():
+                c_name = reg.get('nombre_comun')
+                s_name = reg.get('nombre_cientifico')
+                if c_name and s_name:
+                    especies_existentes[normalizar_compara_py(c_name)] = {
+                        "comun": c_name,
+                        "cientifico": s_name
+                    }
+            
+            nombre_comun_limpio = normalizar_compara_py(nombre_comun)
+            cientifico_limpio = normalizar_compara_py(nombre_cientifico)
+
+            # 1. Chequear si el nombre común ya existe con otro nombre científico
+            if nombre_comun_limpio in especies_existentes:
+                dup = especies_existentes[nombre_comun_limpio]
+                if normalizar_compara_py(dup["cientifico"]) != cientifico_limpio:
+                    raise Exception(f"La especie '{dup['comun']}' ya está registrada con el nombre científico '{dup['cientifico']}'. No puedes registrarla como '{nombre_cientifico}'.")
+
+            # 2. Chequear si el nombre científico ya está asignado a otro nombre común
+            for dup in especies_existentes.values():
+                if normalizar_compara_py(dup["cientifico"]) == cientifico_limpio:
+                    if normalizar_compara_py(dup["comun"]) != nombre_comun_limpio:
+                        raise Exception(f"El nombre científico '{nombre_cientifico}' ya está registrado para la especie '{dup['comun']}'. No puedes usarlo para '{nombre_comun}'.")
+
         resp_fichas = requests.get(f"{url}/rest/v1/registro_evento?fecha_creacion=gte.{anio_actual}-01-01T00:00:00&tipo_evento=eq.Ingreso&select=id", headers=headers)
         count_anio = len(resp_fichas.json()) if resp_fichas.status_code == 200 else 0
         numero_ficha = f"{anio_actual}-{(count_anio + 1):03d}"
