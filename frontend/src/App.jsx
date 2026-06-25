@@ -598,24 +598,33 @@ function App() {
       }
 
       const makeTable = typeof autoTable === 'function' ? autoTable : (autoTable && autoTable.default ? autoTable.default : null);
+      const tableConfig = {
+        head: [columnas],
+        body: datosImprimir,
+        startY: 60,
+        styles: { fontSize: 7.5, cellPadding: 3, overflow: 'linebreak' },
+        columnStyles: {
+          0: { cellWidth: 55 }, // FECHA
+          1: { cellWidth: 50 }, // N° de ficha
+          2: { cellWidth: 70 }, // Nombre comun
+          3: { cellWidth: 80 }, // Nombre científico
+          4: { cellWidth: 50 }, // Nº Acta
+          5: { cellWidth: 25 }, // Cant.
+          6: { cellWidth: 45 }, // Tipo de evento
+          7: { cellWidth: 65 }, // Categoría
+          8: { cellWidth: 45 }, // Saldo anterior
+          9: { cellWidth: 45 }, // Saldo actual
+          10: { cellWidth: 65 }, // Destino
+          11: { cellWidth: 'auto' } // Observaciones
+        },
+        headStyles: { fillColor: [6, 78, 59] },
+        theme: 'grid'
+      };
+
       if (makeTable) {
-        makeTable(doc, {
-          head: [columnas],
-          body: datosImprimir,
-          startY: 60,
-          styles: { fontSize: 8, cellPadding: 3 },
-          headStyles: { fillColor: [6, 78, 59] },
-          theme: 'grid'
-        });
+        makeTable(doc, tableConfig);
       } else if (typeof doc.autoTable === 'function') {
-        doc.autoTable({
-          head: [columnas],
-          body: datosImprimir,
-          startY: 60,
-          styles: { fontSize: 8, cellPadding: 3 },
-          headStyles: { fillColor: [6, 78, 59] },
-          theme: 'grid'
-        });
+        doc.autoTable(tableConfig);
       } else {
         throw new Error("autoTable module is an object but doesn't have a default function: " + JSON.stringify(autoTable));
       }
@@ -633,6 +642,12 @@ function App() {
       const rescPCT = totalIngresosPDF > 0 ? Math.round((registrosFiltrados.filter(r => r.tipo_evento === 'Ingreso' && (r.categoria_evento || '').toUpperCase().includes('RESCATE')).reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0) / totalIngresosPDF) * 100) : 0;
 
       let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 30 : 150;
+      
+      // Si la sección estadística no cabe en la página actual, la enviamos a una nueva página
+      if (currentY + 230 > 595) {
+        doc.addPage();
+        currentY = 40;
+      }
       
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
