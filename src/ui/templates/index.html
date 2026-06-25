@@ -472,18 +472,33 @@
             const normalizarCompara = (str) => {
                 if (!str) return '';
                 return str
-                    .trim()
-                    .toLowerCase()
                     .normalize("NFD")
                     .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
-                    .replace(/\s+/g, ''); // Eliminar todos los espacios
+                    .toLowerCase()
+                    .replace(/[^a-z]/g, ''); // Eliminar todo excepto letras a-z (puntos, espacios, comas, guiones, números, etc.)
             };
 
             const nombreComunLimpio = normalizarCompara(nombreComun);
             const cientificoLimpio = normalizarCompara(nombreCientifico);
 
+            // Validaciones Estructurales
+            if (nombreComunLimpio.length < 3) {
+                alert("El Nombre Común es demasiado corto o no contiene suficientes letras reales.");
+                return false;
+            }
+            if (cientificoLimpio.length < 3) {
+                alert("El Nombre Científico es demasiado corto o no contiene suficientes letras reales.");
+                return false;
+            }
+
+            const contieneScript = /<[^>]*>|javascript:|onerror|onclick|alert/i.test(nombreComun) || /<[^>]*>|javascript:|onerror|onclick|alert/i.test(nombreCientifico);
+            if (contieneScript) {
+                alert("Entrada no permitida: Se detectaron caracteres especiales o patrones inseguros.");
+                return false;
+            }
+
             // 1. Validar si ya existe esta especie con un nombre científico distinto
-            // o si el nombre científico ya está registrado para otra especie
+            // o si el nombre científico ya está registrado para otra especie (Bloqueo Estricto)
             let especieDuplicadaNombre = null;
             let especieDuplicadaCientifico = null;
 
@@ -499,25 +514,80 @@
                 }
             }
 
-            // Si existe por nombre común, pero escribieron un nombre científico diferente
             if (especieDuplicadaNombre && normalizarCompara(especieDuplicadaNombre.cientifico) !== cientificoLimpio) {
                 alert(`La especie "${especieDuplicadaNombre.comun}" ya está registrada con el nombre científico: "${especieDuplicadaNombre.cientifico}".\n\nNo puedes registrarla con otro nombre científico ("${nombreCientifico.trim()}").`);
                 return false;
             }
 
-            // Si el nombre científico ya existe para otro nombre común diferente
             if (especieDuplicadaCientifico && normalizarCompara(especieDuplicadaCientifico.comun) !== nombreComunLimpio) {
                 alert(`El nombre científico "${nombreCientifico.trim()}" ya está registrado para la especie "${especieDuplicadaCientifico.comun}".\n\nNo puedes usarlo para la especie "${nombreComun.trim()}".`);
                 return false;
             }
 
-            // Normalizamos los valores del input antes de enviar
+            // 2. Similitud Difusa (Levenshtein) - Warning/Advertencia de Confirmación
+            const obtenerDistanciaLevenshtein = (a, b) => {
+                const matrix = [];
+                for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+                for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+                for (let i = 1; i <= b.length; i++) {
+                    for (let j = 1; j <= a.length; j++) {
+                        matrix[i][j] = b.charAt(i - 1) === a.charAt(j - 1) 
+                            ? matrix[i - 1][j - 1] 
+                            : Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+                    }
+                }
+                return matrix[b.length][a.length];
+            };
+
+            // Solo buscar similitud difusa si no es un duplicado exacto ya controlado
+            if (!especieDuplicadaNombre) {
+                let especieSimilarNombre = null;
+                for (const key of Object.keys(diccionarioEspecies)) {
+                    const dist = obtenerDistanciaLevenshtein(normalizarCompara(key), nombreComunLimpio);
+                    if (dist > 0 && dist <= 2) {
+                        especieSimilarNombre = key;
+                        break;
+                    }
+                }
+                if (especieSimilarNombre) {
+                    const continuar = confirm(`⚠️ ADVERTENCIA: El nombre común ingresado ("${nombreComun.trim()}") es muy similar a la especie existente "${especieSimilarNombre}" (Científico: ${diccionarioEspecies[especieSimilarNombre]}).\n\n¿Estás seguro de que no es un error de digitación y deseas continuar con el registro?`);
+                    if (!continuar) return false;
+                }
+            }
+
+            if (!especieDuplicadaCientifico) {
+                let especieSimilarCientifico = null;
+                for (const [key, value] of Object.entries(diccionarioEspecies)) {
+                    const dist = obtenerDistanciaLevenshtein(normalizarCompara(value), cientificoLimpio);
+                    if (dist > 0 && dist <= 2) {
+                        especieSimilarCientifico = { comun: key, cientifico: value };
+                        break;
+                    }
+                }
+                if (especieSimilarCientifico) {
+                    const continuar = confirm(`⚠️ ADVERTENCIA: El nombre científico ingresado ("${nombreCientifico.trim()}") es muy similar a "${especieSimilarCientifico.cientifico}" de la especie "${especieSimilarCientifico.comun}".\n\n¿Estás seguro de que no es un error de digitación y deseas continuar con el registro?`);
+                    if (!continuar) return false;
+                }
+            }
+
+            // Formatear y normalizar antes de enviar
             if (especieDuplicadaNombre) {
                 inputComun.value = especieDuplicadaNombre.comun;
                 inputCientifico.value = especieDuplicadaNombre.cientifico;
             } else {
-                inputComun.value = nombreComun.trim().toUpperCase();
-                inputCientifico.value = nombreCientifico.trim();
+                // Auto-formatear nuevo registro
+                inputComun.value = nombreComun.trim().replace(/\s+/g, ' ').toUpperCase();
+                
+                const partesCientifico = nombreCientifico.trim().replace(/\s+/g, ' ').split(' ');
+                if (partesCientifico.length > 0) {
+                    partesCientifico[0] = partesCientifico[0].charAt(0).toUpperCase() + partesCientifico[0].slice(1).toLowerCase();
+                    for (let i = 1; i < partesCientifico.length; i++) {
+                        partesCientifico[i] = partesCientifico[i].toLowerCase();
+                    }
+                    inputCientifico.value = partesCientifico.join(' ');
+                } else {
+                    inputCientifico.value = nombreCientifico.trim();
+                }
             }
         }
         return true;

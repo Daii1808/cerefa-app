@@ -7,10 +7,11 @@ import re
 def normalizar_compara_py(text):
     if not text:
         return ""
-    # Normalizar a NFD, eliminar diacríticos, pasar a minúsculas y quitar todos los espacios
+    # Normalizar a NFD, eliminar diacríticos y pasar a minúsculas
     text_normalized = unicodedata.normalize("NFD", text)
-    text_without_accents = "".join(c for c in text_normalized if unicodedata.category(c) != "Mn")
-    text_clean = re.sub(r"\s+", "", text_without_accents).lower()
+    text_without_accents = "".join(c for c in text_normalized if unicodedata.category(c) != "Mn").lower()
+    # Eliminar todo lo que no sea una letra a-z (remueve espacios, puntos, comas, números, etc.)
+    text_clean = re.sub(r"[^a-z]", "", text_without_accents)
     return text_clean
 
 def get_supabase_headers():
