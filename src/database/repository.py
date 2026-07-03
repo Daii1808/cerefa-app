@@ -269,3 +269,22 @@ def actualizar_desde_modal(id_registro, datos):
         ultimo_error = resp.text or ultimo_error
 
     return {"error": f"No se pudo actualizar: {ultimo_error}"}, 400
+
+def registrar_usuario(correo, password, rol='practicante'):
+    url, headers = get_supabase_headers()
+    
+    resp = requests.get(f"{url}/rest/v1/usuarios?correo=eq.{requests.utils.quote(correo)}", headers=headers)
+    if resp.status_code == 200 and len(resp.json()) > 0:
+        return False, "El correo ya está registrado."
+        
+    datos = {
+        "correo": correo,
+        "password": password,
+        "rol": rol
+    }
+    
+    resp_post = requests.post(f"{url}/rest/v1/usuarios", json=datos, headers=headers)
+    if resp_post.status_code >= 400:
+        return False, f"Error al registrar: {resp_post.text}"
+        
+    return True, "Usuario registrado exitosamente."

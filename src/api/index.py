@@ -15,7 +15,7 @@ app.permanent_session_lifetime = datetime.timedelta(minutes=10)
 
 @app.before_request
 def verificar_login():
-    rutas_publicas = ['login', 'static']
+    rutas_publicas = ['login', 'registro', 'static']
     if request.endpoint not in rutas_publicas and 'usuario' not in session:
         return redirect(url_for('login'))
 
@@ -47,6 +47,25 @@ def login():
             error = f"Error de Supabase: {str(e)}"
             
     return render_template('login.html', error=error)
+
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    error = None
+    exito = None
+    if request.method == 'POST':
+        correo = request.form.get('correo', '').strip().lower()
+        password = request.form.get('password', '').strip()
+        
+        if not correo or not password:
+            error = "Debes ingresar correo y contraseña."
+        else:
+            success, msg = repository.registrar_usuario(correo, password, rol='medico_veterinario')
+            if success:
+                exito = "Cuenta creada exitosamente. Ahora puedes iniciar sesión."
+            else:
+                error = msg
+                
+    return render_template('registro.html', error=error, exito=exito)
 
 @app.route('/logout')
 def logout():
