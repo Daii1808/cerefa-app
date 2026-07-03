@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, guardarEvento, obtenerEventos, verificarMedico, actualizarEvento } from './supabaseService';
+import { supabase, guardarEvento, obtenerEventos, verificarMedico, actualizarEvento, registrarMedico } from './supabaseService';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoCerefa from './assets/logo.jpg';
@@ -33,7 +33,9 @@ function App() {
   const [passwordInput, setPasswordInput] = useState('');
   const [doctorEmail, setDoctorEmail] = useState('');
   const [authError, setAuthError] = useState('');
+  const [authMensaje, setAuthMensaje] = useState('');
   const [cargandoAuth, setCargandoAuth] = useState(false);
+  const [modoRegistro, setModoRegistro] = useState(false);
 
   const [activeTab, setActiveTab] = useState('registro');
   const [registros, setRegistros] = useState([]);
@@ -438,6 +440,30 @@ function App() {
     }
   };
 
+  const manejarRegistro = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthMensaje('');
+    if (!correoInput || !passwordInput) {
+      setAuthError('Por favor ingresa correo y contraseña.');
+      return;
+    }
+    setCargandoAuth(true);
+    try {
+      const res = await registrarMedico(correoInput, passwordInput);
+      if (res.success) {
+        setAuthMensaje(res.message);
+        setModoRegistro(false);
+      } else {
+        setAuthError(res.message);
+      }
+    } catch (error) {
+      setAuthError('Error al conectar con la base de datos de Supabase.');
+    } finally {
+      setCargandoAuth(false);
+    }
+  };
+
   const manejarLogout = () => {
     setEstaAutenticado(false);
     setDoctorEmail('');
@@ -829,14 +855,14 @@ function App() {
                 className="marcador-logo"
               />
               <h2 style={{ color: 'var(--text-primary)', fontSize: '26px', fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-0.5px' }}>
-                ACCESO CEREFAS
+                {modoRegistro ? 'CREAR CUENTA' : 'ACCESO CEREFAS'}
               </h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '5px' }}>
                 Centro de Fauna Silvestre
               </p>
             </div>
             
-            <form onSubmit={manejarLogin}>
+            <form onSubmit={modoRegistro ? manejarRegistro : manejarLogin}>
               <div className="grupo-campo" style={{ marginBottom: '20px', textAlign: 'left' }}>
                 <label>CORREO ELECTRÓNICO</label>
                 <input 
@@ -866,11 +892,27 @@ function App() {
                   ⚠️ {authError}
                 </div>
               )}
+              {authMensaje && (
+                <div style={{ color: 'var(--success)', fontSize: '13px', fontWeight: 600, marginBottom: '20px', backgroundColor: 'rgba(16,185,129,0.1)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.15)' }}>
+                  ✅ {authMensaje}
+                </div>
+              )}
               
-              <button type="submit" className="btn-guardar" style={{ width: '100%', height: '48px' }} disabled={cargandoAuth}>
-                {cargandoAuth ? 'Verificando...' : 'Iniciar Sesión'}
+              <button type="submit" className="btn-guardar" style={{ width: '100%', height: '48px', marginBottom: '15px' }} disabled={cargandoAuth}>
+                {cargandoAuth ? 'Procesando...' : (modoRegistro ? 'Registrarse' : 'Iniciar Sesión')}
               </button>
             </form>
+            
+            <div style={{ marginTop: '20px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+              {modoRegistro ? '¿Ya tienes cuenta?' : '¿Eres médico veterinario nuevo?'}{' '}
+              <button 
+                type="button" 
+                onClick={() => { setModoRegistro(!modoRegistro); setAuthError(''); setAuthMensaje(''); }}
+                style={{ background: 'none', border: 'none', color: 'var(--success)', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                {modoRegistro ? 'Inicia Sesión' : 'Crear Cuenta'}
+              </button>
+            </div>
           </div>
         </div>
       ) : (

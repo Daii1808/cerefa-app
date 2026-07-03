@@ -74,3 +74,24 @@ export const verificarMedico = async (correo, password) => {
   }
   return data && data.length > 0;
 };
+
+export const registrarMedico = async (correo, password) => {
+  const { data: existing } = await supabase
+    .from('usuarios')
+    .select('correo')
+    .eq('correo', correo.trim().toLowerCase());
+    
+  if (existing && existing.length > 0) {
+    return { success: false, message: 'El correo ya está registrado.' };
+  }
+  
+  const { error } = await supabase
+    .from('usuarios')
+    .insert([{ correo: correo.trim().toLowerCase(), password: password.trim(), rol: 'medico_veterinario' }]);
+    
+  if (error) {
+    console.error("Error al registrar médico en Supabase:", error);
+    return { success: false, message: error.message };
+  }
+  return { success: true, message: 'Cuenta creada exitosamente.' };
+};
