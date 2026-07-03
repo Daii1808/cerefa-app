@@ -17,7 +17,6 @@ class FaunaService:
         siguiente_num = FaunaService.calcular_siguiente_correlativo(anio_actual)
         id_inteligente = f"{anio_actual}-{str(siguiente_num).zfill(3)}"
 
-        # Lógica automática para que cuadren los saldos
         ultimo_registro_global = Paciente.query.order_by(Paciente.fecha_registro.desc()).first()
         saldo_ant = ultimo_registro_global.saldo_actual if ultimo_registro_global else 0
         

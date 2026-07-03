@@ -28,7 +28,6 @@ function App() {
     'CERNICALO': { cientifico: 'Falco sparverius', categoria: 'Rapaces', destino: 'Rehabilitación' }
   });
 
-  // Estados de Autenticación
   const [estaAutenticado, setEstaAutenticado] = useState(false);
   const [correoInput, setCorreoInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
@@ -36,12 +35,10 @@ function App() {
   const [authError, setAuthError] = useState('');
   const [cargandoAuth, setCargandoAuth] = useState(false);
 
-  // Estados de la Aplicación
-  const [activeTab, setActiveTab] = useState('registro'); // 'registro', 'inventario', 'metricas'
+  const [activeTab, setActiveTab] = useState('registro');
   const [registros, setRegistros] = useState([]);
   const [cargandoDatos, setCargandoDatos] = useState(false);
 
-  // Tema (Día/Noche)
   const [theme, setTheme] = useState('day');
 
   useEffect(() => {
@@ -52,28 +49,23 @@ function App() {
     setTheme(prev => prev === 'day' ? 'night' : 'day');
   };
   
-  // Filtro de búsqueda para Inventario
   const [buscarInventario, setBuscarInventario] = useState('');
 
-  // Filtros Avanzados para Historial (Pestaña Registro)
   const [filtroSemestre, setFiltroSemestre] = useState('');
   const [filtroGeneral, setFiltroGeneral] = useState('');
   const [filtroFecha, setFiltroFecha] = useState('');
   const [filtroEspecie, setFiltroEspecie] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('');
 
-  // Estados del Modal de Edición
   const [modalAbierto, setModalAbierto] = useState(false);
   const [registroSeleccionado, setRegistroSeleccionado] = useState(null);
   const [modoEdicion, setModoEdicion] = useState(false);
 
-  // Estados del Gestor de Especies
   const [modalEspeciesAbierto, setModalEspeciesAbierto] = useState(false);
   const [nuevaEspecieNombre, setNuevaEspecieNombre] = useState('');
   const [nuevaEspecieCientifico, setNuevaEspecieCientifico] = useState('');
   const [especieAEliminar, setEspecieAEliminar] = useState('');
 
-  // Estado para la Notificación (Pop-up Custom)
   const [notificacion, setNotificacion] = useState({
     visible: false,
     tipo: 'alerta',
@@ -105,26 +97,22 @@ function App() {
     });
   };
 
-  // Estados del Formulario de Evento
-  const [tipoEvento, setTipoEvento] = useState('Ingreso'); // 'Ingreso' o 'Egreso'
+  const [tipoEvento, setTipoEvento] = useState('Ingreso');
   
-  // Estados Modal Inventario Activo
   const [modalActivosAbierto, setModalActivosAbierto] = useState(false);
   const [especieModalActivos, setEspecieModalActivos] = useState('');
   
-  // Filtros para Métricas
   const [metricaFiltroTiempo, setMetricaFiltroTiempo] = useState('Todos');
   const [metricaFiltroEspecie, setMetricaFiltroEspecie] = useState('Todas');
   const [nombreComun, setNombreComun] = useState('');
   const [nombreCientifico, setNombreCientifico] = useState('');
   const [cantidad, setCantidad] = useState(1);
   const [observacion, setObservacion] = useState('');
-  const [categoriaEvento, setCategoriaEvento] = useState(''); // ej. 'SAG Puerto Montt'
-  const [destino, setDestino] = useState(''); // 'Rehabilitación', 'Clínica', 'Liberación', 'Fallecido'
+  const [categoriaEvento, setCategoriaEvento] = useState('');
+  const [destino, setDestino] = useState('');
   const [numeroActa, setNumeroActa] = useState('');
-  const [numeroFichaSeleccionada, setNumeroFichaSeleccionada] = useState(''); // Para Egresos
+  const [numeroFichaSeleccionada, setNumeroFichaSeleccionada] = useState('');
 
-  // Estados para Categorías y Destinos
   const [listaCategorias, setListaCategorias] = useState([
     "SAG Puerto Montt",
     "SAG Puerto Varas",
@@ -150,14 +138,12 @@ function App() {
   const [nuevoDestino, setNuevoDestino] = useState('');
   const [destinoAEliminar, setDestinoAEliminar] = useState('');
 
-  // Cargar registros médicos al iniciar
   const cargarDatos = async () => {
     setCargandoDatos(true);
     try {
       const datos = await obtenerEventos();
       setRegistros(datos || []);
       
-      // Enriquecer el diccionario con especies dinámicas guardadas
       if (datos && datos.length > 0) {
         setDiccionarioAnimales(prevDict => {
           const nuevoDict = { ...prevDict };
@@ -177,7 +163,6 @@ function App() {
         });
       }
 
-      // Enriquecer categorías y destinos con los guardados
       if (datos && datos.length > 0) {
         setListaCategorias(prevCats => {
           const catsSet = new Set(prevCats);
@@ -209,7 +194,6 @@ function App() {
     cargarDatos();
   }, []);
 
-  // Rellenar automáticamente el nombre científico al seleccionar una especie (solo en Ingresos)
   useEffect(() => {
     if (tipoEvento === 'Ingreso') {
       const especieUpper = nombreComun ? nombreComun.toUpperCase() : '';
@@ -219,7 +203,6 @@ function App() {
     }
   }, [nombreComun, tipoEvento]);
 
-  // Manejar el cambio de Ficha Seleccionada para Egresos
   useEffect(() => {
     if (tipoEvento === 'Egreso' && numeroFichaSeleccionada) {
       const registroFicha = registros.find(r => r.numero_ficha === numeroFichaSeleccionada);
@@ -227,7 +210,6 @@ function App() {
         setNombreComun(registroFicha.nombre_comun || '');
         setNombreCientifico(registroFicha.nombre_cientifico || '');
         setCategoriaEvento(registroFicha.categoria_evento || 'Particular');
-        // No copiar 'Rehabilitación' como destino para un Egreso
         if (registroFicha.destino && registroFicha.destino !== 'Rehabilitación') {
           setDestino(registroFicha.destino);
         } else {
@@ -237,7 +219,6 @@ function App() {
     }
   }, [numeroFichaSeleccionada, tipoEvento, registros]);
 
-  // Manejar el cambio de Tipo de Evento
   const cambiarTipoEvento = (tipo) => {
     setTipoEvento(tipo);
     setNombreComun('');
@@ -249,17 +230,15 @@ function App() {
     setDestino('');
   };
 
-  // Función para normalizar texto eliminando espacios, acentos, números y puntuaciones
   const normalizarCompara = (str) => {
     if (!str) return '';
     return str
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
-      .replace(/[^a-z]/g, ''); // Eliminar TODO lo que no sea una letra a-z (remueve espacios, puntos, comas, guiones, números, etc.)
+      .replace(/[^a-z]/g, '');
   };
 
-  // Calcular la distancia de Levenshtein para similitud difusa
   const obtenerDistanciaLevenshtein = (a, b) => {
     const matrix = [];
     for (let i = 0; i <= b.length; i++) matrix[i] = [i];
@@ -274,17 +253,14 @@ function App() {
     return matrix[b.length][a.length];
   };
 
-  // Agregar Nueva Especie con validaciones anti-duplicados estrictas
   const handleAgregarEspecie = () => {
     if (!nuevaEspecieNombre || !nuevaEspecieCientifico) {
       return mostrarAlerta("Completa ambos campos (Nombre común y Científico).");
     }
 
-    // 1. Limpieza y Normalización Base (Quitar espacios, acentos y todo lo que no sea letra a-z)
     const nombreComunLimpio = normalizarCompara(nuevaEspecieNombre);
     const cientificoLimpio = normalizarCompara(nuevaEspecieCientifico);
 
-    // 2. Validaciones Estructurales (Longitud y contenido de caracteres válidos)
     if (nombreComunLimpio.length < 3) {
       return mostrarAlerta("El Nombre Común es demasiado corto o no contiene suficientes letras reales.");
     }
@@ -297,7 +273,6 @@ function App() {
       return mostrarAlerta("Entrada no permitida: Se detectaron caracteres especiales o patrones inseguros.");
     }
 
-    // 3. Validar duplicación exacta (Hard Block)
     const especieDuplicadaNombre = Object.keys(diccionarioAnimales).find(
       key => normalizarCompara(key) === nombreComunLimpio
     );
@@ -312,9 +287,7 @@ function App() {
       return mostrarAlerta(`El nombre científico "${nuevaEspecieCientifico.trim()}" ya está registrado para la especie "${especieDuplicadaCientifico}".`);
     }
 
-    // Procedimiento de guardado y formateo canónico
     const procederConGuardado = () => {
-      // Auto-formatear: Nombre común a MAYÚSCULAS y científico con Capitalización clásica (ej. "Theristicus melanopis")
       const especieUpper = nuevaEspecieNombre.trim().replace(/\s+/g, ' ').toUpperCase();
       
       const partesCientifico = nuevaEspecieCientifico.trim().replace(/\s+/g, ' ').split(' ');
@@ -344,7 +317,6 @@ function App() {
       });
     };
 
-    // 4. Validar similitud difusa (Levenshtein <= 2)
     const especieSimilarNombre = Object.keys(diccionarioAnimales).find(key => {
       const dist = obtenerDistanciaLevenshtein(normalizarCompara(key), nombreComunLimpio);
       return dist > 0 && dist <= 2;
@@ -368,7 +340,6 @@ function App() {
     procederConGuardado();
   };
 
-  // Eliminar Especie y Registros
   const handleEliminarEspecie = () => {
     if (!especieAEliminar) return mostrarAlerta("Selecciona una especie a eliminar.");
     mostrarConfirmacion(`⚠️ ADVERTENCIA CRÍTICA: Esto eliminará permanentemente de la base de datos la especie "${especieAEliminar}" y TODOS los registros médicos de pacientes asociados a ella.\n\n¿Estás absolutamente seguro de continuar?`, async () => {
@@ -379,7 +350,6 @@ function App() {
           .eq('nombre_comun', especieAEliminar);
         if (error) throw error;
         
-        // Remove from local dictionary
         setDiccionarioAnimales(prev => {
           const newDict = { ...prev };
           delete newDict[especieAEliminar];
@@ -388,14 +358,13 @@ function App() {
 
         mostrarAlerta("Especie y todos sus registros han sido eliminados correctamente.");
         setEspecieAEliminar('');
-        await cargarDatos(); // Recargar datos
+        await cargarDatos();
       } catch (err) {
         mostrarAlerta("Error al eliminar la especie: " + err.message);
       }
     });
   };
 
-  // Agregar Nueva Categoría
   const handleAgregarCategoria = () => {
     if (!nuevaCategoria.trim()) return mostrarAlerta("Por favor escribe el nombre de la categoría.");
     const cat = nuevaCategoria.trim();
@@ -408,7 +377,6 @@ function App() {
     setModalCategoriasAbierto(false);
   };
 
-  // Eliminar Categoría
   const handleEliminarCategoria = () => {
     if (!categoriaAEliminar) return mostrarAlerta("Selecciona una categoría a eliminar.");
     mostrarConfirmacion(`¿Estás seguro de que deseas eliminar la categoría "${categoriaAEliminar}" de la lista?`, () => {
@@ -421,7 +389,6 @@ function App() {
     });
   };
 
-  // Agregar Nuevo Destino
   const handleAgregarDestino = () => {
     if (!nuevoDestino.trim()) return mostrarAlerta("Por favor escribe el nombre del destino/estado.");
     const dest = nuevoDestino.trim();
@@ -434,7 +401,6 @@ function App() {
     setModalDestinosAbierto(false);
   };
 
-  // Eliminar Destino
   const handleEliminarDestino = () => {
     if (!destinoAEliminar) return mostrarAlerta("Selecciona un destino/estado a eliminar.");
     mostrarConfirmacion(`¿Estás seguro de que deseas eliminar el destino/estado "${destinoAEliminar}" de la lista?`, () => {
@@ -447,7 +413,6 @@ function App() {
     });
   };
 
-  // Manejar Login Médico
   const manejarLogin = async (e) => {
     e.preventDefault();
     setAuthError('');
@@ -473,13 +438,11 @@ function App() {
     }
   };
 
-  // Manejar Logout
   const manejarLogout = () => {
     setEstaAutenticado(false);
     setDoctorEmail('');
   };
 
-  // Guardar Nuevo Evento
   const handleGuardar = async (e) => {
     e.preventDefault();
 
@@ -493,11 +456,9 @@ function App() {
       return mostrarAlerta('La cantidad debe ser mayor que 0.');
     }
 
-    // 1. Calcular Número de Ficha
     let fichaParaGuardar = '';
     if (tipoEvento === 'Ingreso') {
       const anioActual = new Date().getFullYear();
-      // Filtrar ingresos de este año
       const ingresosAnio = registros.filter(r => 
         r.tipo_evento === 'Ingreso' && 
         r.fecha && r.fecha.startsWith(anioActual.toString())
@@ -508,8 +469,6 @@ function App() {
       fichaParaGuardar = numeroFichaSeleccionada;
     }
 
-    // 2. Calcular Saldos (Anterior y Actual)
-    // Buscamos el saldo actual más reciente de la especie seleccionada
     const registrosEspecie = registros.filter(r => r.nombre_cientifico === nombreCientifico);
     const saldoAnterior = registrosEspecie.length > 0 ? parseInt(registrosEspecie[0].saldo_actual) || 0 : 0;
     
@@ -544,7 +503,6 @@ function App() {
           : `¡Operación Exitosa! Egreso de Ficha ${fichaParaGuardar} guardado correctamente.`;
         mostrarAlerta(mensajeExito);
         
-        // Limpiar Formulario y recargar datos
         setNombreComun('');
         setNombreCientifico('');
         setObservacion('');
@@ -565,11 +523,9 @@ function App() {
     }
   };
 
-  // Calcular el inventario actual agrupando por especie (saldo_actual de su registro más reciente)
   const obtenerInventario = () => {
     const inventario = {};
     
-    // Recorremos los registros (que vienen ordenados de más reciente a más antiguo)
     registros.forEach(reg => {
       if (reg.nombre_comun && !inventario[reg.nombre_comun]) {
         inventario[reg.nombre_comun] = {
@@ -582,7 +538,6 @@ function App() {
       }
     });
 
-    // Filtrar los que tengan saldo > 0 y que coincidan con la búsqueda
     return Object.values(inventario)
       .filter(item => item.saldo > 0)
       .filter(item => 
@@ -591,10 +546,8 @@ function App() {
       );
   };
 
-  // Obtener Fichas Activas para Egresar (fichas que tienen ingresos y saldo > 0 en esa especie)
   const obtenerFichasActivas = () => {
     const fichasMap = new Map();
-    // registros ordenados por fecha desc
     registros.forEach(reg => {
       if (reg.numero_ficha && !fichasMap.has(reg.numero_ficha)) {
         fichasMap.set(reg.numero_ficha, reg);
@@ -610,7 +563,6 @@ function App() {
       }));
   };
 
-  // Obtener Fichas Específicas para Modal
   const getFichasPorEspecie = (especie) => {
     const fichasMap = new Map();
     registros.forEach(reg => {
@@ -626,7 +578,6 @@ function App() {
     setModalActivosAbierto(true);
   };
 
-  // Lógica de Filtrado de Registros
   const registrosFiltrados = registros.filter(reg => {
     const fecha = reg.fecha ? reg.fecha.substring(0, 10) : '-';
     const tipo = reg.tipo_evento || '';
@@ -702,18 +653,18 @@ function App() {
         startY: 60,
         styles: { fontSize: 7.5, cellPadding: 3, overflow: 'linebreak' },
         columnStyles: {
-          0: { cellWidth: 55 }, // FECHA
-          1: { cellWidth: 50 }, // N° de ficha
-          2: { cellWidth: 70 }, // Nombre comun
-          3: { cellWidth: 80 }, // Nombre científico
-          4: { cellWidth: 50 }, // Nº Acta
-          5: { cellWidth: 25 }, // Cant.
-          6: { cellWidth: 45 }, // Tipo de evento
-          7: { cellWidth: 65 }, // Categoría
-          8: { cellWidth: 45 }, // Saldo anterior
-          9: { cellWidth: 45 }, // Saldo actual
-          10: { cellWidth: 65 }, // Destino
-          11: { cellWidth: 'auto' } // Observaciones
+          0: { cellWidth: 55 },
+          1: { cellWidth: 50 },
+          2: { cellWidth: 70 },
+          3: { cellWidth: 80 },
+          4: { cellWidth: 50 },
+          5: { cellWidth: 25 },
+          6: { cellWidth: 45 },
+          7: { cellWidth: 65 },
+          8: { cellWidth: 45 },
+          9: { cellWidth: 45 },
+          10: { cellWidth: 65 },
+          11: { cellWidth: 'auto' }
         },
         headStyles: { fillColor: [6, 78, 59] },
         theme: 'grid'
@@ -727,7 +678,6 @@ function App() {
         throw new Error("autoTable module is an object but doesn't have a default function: " + JSON.stringify(autoTable));
       }
 
-      // Calcular Estadísticas de los Registros Filtrados
       const totalIngresosPDF = registrosFiltrados.filter(r => r.tipo_evento === 'Ingreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
       const totalEgresosPDF = registrosFiltrados.filter(r => r.tipo_evento === 'Egreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
       
@@ -741,7 +691,6 @@ function App() {
 
       let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 30 : 150;
       
-      // Si la sección estadística no cabe en la página actual, la enviamos a una nueva página
       if (currentY + 230 > 595) {
         doc.addPage();
         currentY = 40;
@@ -796,7 +745,6 @@ function App() {
       drawBar(40, currentY, "Fallecido / Deceso / Eutanasia", fallPCT, 245, 158, 11);
       drawBar(420, currentY, "Rescates Propios CEREFAS", rescPCT, 245, 158, 11);
       
-      // Agregar espacio para firma digital
       currentY += 60;
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
@@ -813,7 +761,6 @@ function App() {
   };
 
   const abrirModal = (registro) => {
-    // Tomar solo YYYY-MM-DD de la fecha si existe
     const fechaFormateada = registro.fecha ? registro.fecha.substring(0, 10) : '';
     setRegistroSeleccionado({
       ...registro,
@@ -845,7 +792,6 @@ function App() {
     }
   };
 
-  // Métricas rápidas y filtros para Gráficos
   let registrosMetricas = [...registros];
   if (metricaFiltroTiempo !== 'Todos') {
     const ahora = new Date();
@@ -872,7 +818,7 @@ function App() {
 
   return (
     <div>
-      {/* 1. SECCIÓN DE INGRESO (LOGIN) */}
+      {}
       {!estaAutenticado ? (
         <div className="login-container">
           <div className="login-card">
@@ -928,9 +874,9 @@ function App() {
           </div>
         </div>
       ) : (
-        /* 2. SECCIÓN PRINCIPAL (DASHBOARD) */
+        
         <main>
-          {/* Cabecera Estilizada */}
+          {}
           <header className="cabecera-cerefa">
             <img src={logoCerefa} alt="Logo CEREFA" className="marcador-logo" />  
             <h1 className="titulo-plataforma">Plataforma CEREFAS</h1>
@@ -938,7 +884,7 @@ function App() {
           </header>
 
           <div className="contenido-principal">
-            {/* Barra de Perfil Médico */}
+            {}
             <div className="doctor-profile-strip">
               <div className="doctor-info">
                 <div className="doctor-avatar">
@@ -959,7 +905,7 @@ function App() {
               </div>
             </div>
 
-            {/* Pestañas de Navegación del Dashboard */}
+            {}
             <nav className="tab-navigation">
               <button 
                 onClick={() => setActiveTab('registro')} 
@@ -981,7 +927,7 @@ function App() {
               </button>
             </nav>
 
-            {/* Métricas Rápidas (Superior) */}
+            {}
             {activeTab === 'metricas' && (
               <section className="metricas-grid animate-fade" style={{ marginBottom: '20px' }}>
               <div className="card-metrica primary-border">
@@ -1018,15 +964,15 @@ function App() {
               </section>
             )}
 
-            {/* PESTAÑA 1: REGISTRO DE EVENTOS */}
+            {}
             {activeTab === 'registro' && (
               <div className="animate-fade">
-                {/* Formulario de Registro */}
+                {}
                 <form onSubmit={handleGuardar} className="panel-oscuro">
                   <h2>Nuevo Registro Médico</h2>
                   
                   <div className="fila-formulario">
-                    {/* Tipo de Evento */}
+                    {}
                     <div className="grupo-campo">
                       <label>Tipo de Evento</label>
                       <div className="flex-botones">
@@ -1047,7 +993,7 @@ function App() {
                       </div>
                     </div>
 
-                    {/* Ficha Relacionada (Solo para Egresos) */}
+                    {}
                     {tipoEvento === 'Egreso' && (
                       <div className="grupo-campo">
                         <label>Ficha de Ingreso Activa</label>
@@ -1067,7 +1013,7 @@ function App() {
                       </div>
                     )}
 
-                    {/* Nombre Común */}
+                    {}
                     <div className="grupo-campo">
                       <label>Especie (Nombre Común)</label>
                       {tipoEvento === 'Ingreso' ? (
@@ -1103,7 +1049,7 @@ function App() {
                       )}
                     </div>
 
-                    {/* Nombre Científico */}
+                    {}
                     <div className="grupo-campo">
                       <label>Nombre Científico</label>
                       <input 
@@ -1117,7 +1063,7 @@ function App() {
                   </div>
 
                   <div className="fila-formulario">
-                    {/* Cantidad */}
+                    {}
                     <div className="grupo-campo">
                       <label>Cantidad de Ejemplares</label>
                       <input 
@@ -1130,7 +1076,7 @@ function App() {
                       />
                     </div>
 
-                    {/* Categoría Evento */}
+                    {}
                     <div className="grupo-campo">
                       <label>Categoría del Evento</label>
                       {tipoEvento === 'Ingreso' ? (
@@ -1166,7 +1112,7 @@ function App() {
                       )}
                     </div>
 
-                    {/* Destino */}
+                    {}
                     <div className="grupo-campo">
                       <label>Destino o Estado</label>
                       <div style={{ display: 'flex', gap: '10px', minWidth: 0 }}>
@@ -1193,7 +1139,7 @@ function App() {
                       </div>
                     </div>
 
-                    {/* Número de Acta */}
+                    {}
                     <div className="grupo-campo">
                       <label>Nº Acta de Movimiento</label>
                       <input 
@@ -1206,7 +1152,7 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Observación y Envío */}
+                  {}
                   <div className="fila-formulario" style={{ alignItems: 'flex-end', marginBottom: '0px' }}>
                     <div className="grupo-campo" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'row', gap: '15px', alignItems: 'flex-end' }}>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -1226,7 +1172,7 @@ function App() {
                   </div>
                 </form>
 
-                {/* MODAL GESTOR DE ESPECIES */}
+                {}
                 {modalEspeciesAbierto && (
                   <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70, padding: '15px' }} onClick={() => setModalEspeciesAbierto(false)}>
                     <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
@@ -1260,7 +1206,7 @@ function App() {
                   </div>
                 )}
 
-                {/* MODAL GESTOR DE CATEGORÍAS */}
+                {}
                 {modalCategoriasAbierto && (
                   <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70, padding: '15px' }} onClick={() => setModalCategoriasAbierto(false)}>
                     <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
@@ -1292,7 +1238,7 @@ function App() {
                   </div>
                 )}
 
-                {/* MODAL GESTOR DE DESTINOS */}
+                {}
                 {modalDestinosAbierto && (
                   <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70, padding: '15px' }} onClick={() => setModalDestinosAbierto(false)}>
                     <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
@@ -1324,7 +1270,7 @@ function App() {
                   </div>
                 )}
 
-                {/* POP-UP CUSTOM (NOTIFICACIONES / REEMPLAZO DE ALERT Y CONFIRM) */}
+                {}
                 {notificacion.visible && (
                   <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '15px' }} onClick={notificacion.onCancel || notificacion.onConfirm}>
                     <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', width: '100%', maxWidth: '400px', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', textAlign: 'center', position: 'relative' }} onClick={e => e.stopPropagation()}>
@@ -1357,7 +1303,7 @@ function App() {
                   </div>
                 )}
 
-                {/* Tabla de Últimos Registros */}
+                {}
                 <div className="panel-oscuro">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid var(--border-color)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
@@ -1460,7 +1406,7 @@ function App() {
                   </div>
                 </div>
 
-                {/* MODAL FICHA DE EDICIÓN */}
+                {}
                 {modalAbierto && registroSeleccionado && (
                   <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '15px' }} onClick={cerrarModal}>
                     <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
@@ -1530,7 +1476,7 @@ function App() {
               </div>
             )}
 
-            {/* PESTAÑA 2: INVENTARIO DE FAUNA ACTIVA */}
+            {}
             {activeTab === 'inventario' && (
               <div className="animate-fade">
                 <div className="panel-oscuro">
@@ -1539,7 +1485,7 @@ function App() {
                     Esta lista muestra el conteo neto y actualizado de ejemplares de fauna silvestre que se encuentran actualmente internados en rehabilitación en el CEREFA.
                   </p>
 
-                  {/* Buscador */}
+                  {}
                   <div className="buscador-wrapper">
                     <span className="buscador-icon">🔍</span>
                     <input 
@@ -1551,7 +1497,7 @@ function App() {
                     />
                   </div>
 
-                  {/* Grid de Fichas de Inventario */}
+                  {}
                   {cargandoDatos ? (
                     <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
                       Calculando inventario activo...
@@ -1584,7 +1530,7 @@ function App() {
                     </div>
                   )}
 
-                  {/* MODAL FICHAS ACTIVAS */}
+                  {}
                   {modalActivosAbierto && (
                     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: '16px' }} onClick={() => setModalActivosAbierto(false)}>
                       <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
@@ -1627,7 +1573,7 @@ function App() {
               </div>
             )}
 
-            {/* PESTAÑA 3: PANEL DE MÉTRICAS */}
+            {}
             {activeTab === 'metricas' && (
               <div className="animate-fade">
                 <div className="panel-oscuro">
@@ -1636,7 +1582,7 @@ function App() {
                     Visualiza la tasa de éxito clínico y la distribución de destinos y categorías de la fauna ingresada.
                   </p>
                   
-                  {/* Filtros de Métricas */}
+                  {}
                   <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
                     <div style={{ flex: 1, maxWidth: '200px' }}>
                       <label style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '5px', display: 'block' }}>Rango de Tiempo</label>
@@ -1659,7 +1605,7 @@ function App() {
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
-                    {/* Gráfico 1: Tasa de Éxito y Destino de Egresos */}
+                    {}
                     <div>
                       <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '15px', fontWeight: '600' }}>Destinos de Egresos (%)</h3>
                       <div className="bar-chart-container">
@@ -1703,7 +1649,7 @@ function App() {
                       </div>
                     </div>
 
-                    {/* Gráfico 2: Origen / Categoría de Eventos */}
+                    {}
                     <div>
                       <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '15px', fontWeight: '600' }}>Categorías de Ingreso (%)</h3>
                       <div className="bar-chart-container">

@@ -38,10 +38,6 @@ def registrar_ingreso():
         return jsonify(resultado), estatus
     return jsonify(resultado), estatus
 
-# ==========================================
-# API para edición en modal (index.html)
-# Permiso requerido al guardar: modificar_fichas (auth_service.py)
-# ==========================================
 
 @fauna_bp.route('/api/fauna/obtener/<int:id_paciente>', methods=['GET'])
 def obtener_paciente_editar(id_paciente):
@@ -98,7 +94,6 @@ def actualizar_paciente(id_paciente):
             asignado = False
             for nombre in ('fecha_registro', 'fecha'):
                 if hasattr(paciente, nombre):
-                    # DateTime en BD: usar datetime; Date: usar date
                     valor = datetime.combine(fecha_parsed, datetime.min.time())
                     setattr(paciente, nombre, valor)
                     asignado = True

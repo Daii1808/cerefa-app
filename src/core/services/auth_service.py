@@ -1,5 +1,4 @@
 ROLES_PERMISOS = {
-    # ROLES DE MÉDICOS
     "medico": ["ver_fichas", "crear_fichas", "modificar_fichas", "registrar_fallecimiento", "dar_alta_medica"],
     "médico": ["ver_fichas", "crear_fichas", "modificar_fichas", "registrar_fallecimiento", "dar_alta_medica"],
     "medico veterinario": ["ver_fichas", "crear_fichas", "modificar_fichas", "registrar_fallecimiento", "dar_alta_medica"],
@@ -7,13 +6,11 @@ ROLES_PERMISOS = {
     "medico veterinaria": ["ver_fichas", "crear_fichas", "modificar_fichas", "registrar_fallecimiento", "dar_alta_medica"],
     "médico veterinaria": ["ver_fichas", "crear_fichas", "modificar_fichas", "registrar_fallecimiento", "dar_alta_medica"],
     
-    # ROLES DE TÉCNICOS
     "tecnico": ["ver_fichas", "crear_fichas", "modificar_fichas", "cambiar_a_rehabilitacion"],
     "técnico": ["ver_fichas", "crear_fichas", "modificar_fichas", "cambiar_a_rehabilitacion"],
     "tecnico veterinario": ["ver_fichas", "crear_fichas", "modificar_fichas", "cambiar_a_rehabilitacion"],
     "técnico veterinario": ["ver_fichas", "crear_fichas", "modificar_fichas", "cambiar_a_rehabilitacion"],
     
-    # ROLES DE PRACTICANTES
     "practicante": ["ver_fichas", "crear_fichas", "modificar_fichas"]
 }
 

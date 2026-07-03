@@ -1,25 +1,22 @@
 from datetime import datetime
 
-from src.database.connection import db  # única instancia SQLAlchemy (ver connection.py)
+from src.database.connection import db
 
 class Paciente(db.Model):
     __tablename__ = 'pacientes'
 
-    # ID inteligente único: '2026-001'
     id = db.Column(db.String(20), primary_key=True)
     numero_registro = db.Column(db.Integer, nullable=False)
     anio_registro = db.Column(db.Integer, nullable=False)
     
-    # Datos extraídos de tus planillas de Excel del CEREFA
     nombre_comun = db.Column(db.String(100), nullable=False)
     nombre_cientifico = db.Column(db.String(100))
     num_acta_movimiento = db.Column(db.String(50))
     num_ejemplar = db.Column(db.Integer, default=1)
     
-    tipo_evento = db.Column(db.String(20), nullable=False) # Ingreso o Egreso
-    categoria_evento = db.Column(db.String(100))          # Particular, SAG, etc.
+    tipo_evento = db.Column(db.String(20), nullable=False)
+    categoria_evento = db.Column(db.String(100))
     
-    # Control automatizado de saldos (evita errores manuales)
     saldo_anterior = db.Column(db.Integer, default=0)
     saldo_actual = db.Column(db.Integer, default=0)
     

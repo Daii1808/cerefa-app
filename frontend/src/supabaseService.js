@@ -5,7 +5,6 @@ const supabaseAnonKey = 'sb_publishable_Nk6sOhgqW9CH-Y4qoU7HEQ_9pTSh4ZI';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Guardar un nuevo evento de registro médico
 export const guardarEvento = async (nuevoEvento) => {
   const { data, error } = await supabase
     .from('registro_evento')
@@ -35,7 +34,6 @@ export const guardarEvento = async (nuevoEvento) => {
   return data;
 };
 
-// Obtener todos los eventos ordenados por fecha de creación descendente
 export const obtenerEventos = async () => {
   const { data, error } = await supabase
     .from('registro_evento')
@@ -49,7 +47,6 @@ export const obtenerEventos = async () => {
   return data;
 };
 
-// Actualizar un evento de registro médico existente
 export const actualizarEvento = async (id, datosActualizados) => {
   const { data, error } = await supabase
     .from('registro_evento')
@@ -64,7 +61,6 @@ export const actualizarEvento = async (id, datosActualizados) => {
   return data;
 };
 
-// Verificar las credenciales de un médico
 export const verificarMedico = async (correo, password) => {
   const { data, error } = await supabase
     .from('usuarios')

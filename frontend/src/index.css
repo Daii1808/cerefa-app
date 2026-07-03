@@ -1,12 +1,10 @@
-/* ==========================================================================
-   CEREFA APP - PREMIUM DESIGN SYSTEM (DARK MODE & GLASSMORPHISM)
-   ========================================================================== */
 
-/* IMPORT GOOGLE FONTS */
+
+
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  /* Colors */
+  
   --bg-primary: #0a0a0c;
   --bg-secondary: #121216;
   --bg-card: rgba(22, 22, 28, 0.7);
@@ -17,7 +15,7 @@
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
   
-  /* Accent Colors */
+  
   --primary: #00b67a;
   --primary-hover: #009663;
   --primary-glow: rgba(0, 182, 122, 0.3);
@@ -29,16 +27,16 @@
   --warning: #f59e0b;
   --info: #3b82f6;
   
-  /* Glassmorphism details */
+  
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
   --glass-blur: blur(12px);
   
-  /* Fonts */
+  
   --font-display: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
-/* DAY THEME VARIABLES */
+
 :root[data-theme="day"] {
   --bg-primary: #f1f5f9;
   --bg-secondary: #f8fafc;
@@ -141,7 +139,7 @@
 :root[data-theme="day"] .tab-btn.active {
   color: #ffffff;
 }
-/* RESET */
+
 * {
   margin: 0;
   padding: 0;
@@ -160,7 +158,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* CUSTOM SCROLLBAR */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -176,7 +174,7 @@ body {
   background: #33333f;
 }
 
-/* LOGIN LAYOUT */
+
 .login-container {
   display: flex;
   justify-content: center;
@@ -205,7 +203,7 @@ body {
   border-color: rgba(0, 182, 122, 0.2);
 }
 
-/* APP HEADER */
+
 .cabecera-cerefa {
   display: flex;
   flex-direction: column;
@@ -260,7 +258,7 @@ body {
   text-transform: uppercase;
 }
 
-/* MAIN CONTENT */
+
 .contenido-principal {
   max-width: 1300px;
   margin: 0 auto;
@@ -273,7 +271,7 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* TAB NAVIGATION (PREMIUM GLASS NAV) */
+
 .tab-navigation {
   display: flex;
   justify-content: center;
@@ -316,7 +314,7 @@ body {
   box-shadow: 0 4px 15px var(--primary-glow);
 }
 
-/* STATS CARDS GRID */
+
 .metricas-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -394,7 +392,7 @@ body {
   color: #ffffff;
 }
 
-/* PANELS AND CARDS */
+
 .panel-oscuro {
   background: var(--bg-card);
   backdrop-filter: var(--glass-blur);
@@ -430,7 +428,7 @@ body {
   margin-left: 15px;
 }
 
-/* FORM GRID */
+
 .fila-formulario {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -452,7 +450,7 @@ body {
   letter-spacing: 1px;
 }
 
-/* STYLISH INPUTS & SELECTS */
+
 .input-cerefa, .select-cerefa {
   background-color: rgba(10, 10, 12, 0.7);
   border: 1.5px solid rgba(255, 255, 255, 0.08);
@@ -479,7 +477,7 @@ body {
   font-style: italic;
 }
 
-/* BUTTONS */
+
 .flex-botones {
   display: flex;
   gap: 12px;
@@ -550,7 +548,7 @@ body {
   transform: translateY(0);
 }
 
-/* INVENTARIO LIST */
+
 .buscador-wrapper {
   margin-bottom: 25px;
   position: relative;
@@ -657,7 +655,7 @@ body {
   color: var(--text-secondary);
 }
 
-/* PREMIUM TABLE DESIGN */
+
 .contenedor-tabla {
   overflow-x: auto;
   border-radius: 14px;
@@ -702,7 +700,7 @@ body {
   border-bottom: none;
 }
 
-/* ROW INTERNALS */
+
 .table-ficha {
   font-size: 12px;
   font-weight: 700;
@@ -731,7 +729,7 @@ body {
   color: var(--text-muted);
 }
 
-/* BADGES */
+
 .badge {
   padding: 6px 12px;
   border-radius: 8px;
@@ -757,7 +755,7 @@ body {
   box-shadow: 0 2px 10px rgba(239, 68, 68, 0.05);
 }
 
-/* METRICS STATS BARS */
+
 .bar-chart-container {
   display: flex;
   flex-direction: column;
@@ -805,7 +803,7 @@ body {
   background: linear-gradient(90deg, var(--warning) 0%, #fbbf24 100%);
 }
 
-/* ACCOUNT STRIP */
+
 .doctor-profile-strip {
   display: flex;
   justify-content: space-between;
@@ -860,7 +858,7 @@ body {
   color: var(--danger);
 }
 
-/* UTILITIES */
+
 .flex-row-end {
   display: flex;
   justify-content: flex-end;

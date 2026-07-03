@@ -7,10 +7,8 @@ import re
 def normalizar_compara_py(text):
     if not text:
         return ""
-    # Normalizar a NFD, eliminar diacríticos y pasar a minúsculas
     text_normalized = unicodedata.normalize("NFD", text)
     text_without_accents = "".join(c for c in text_normalized if unicodedata.category(c) != "Mn").lower()
-    # Eliminar todo lo que no sea una letra a-z (remueve espacios, puntos, comas, números, etc.)
     text_clean = re.sub(r"[^a-z]", "", text_without_accents)
     return text_clean
 
@@ -35,11 +33,8 @@ def verificar_medico(correo, password):
 
 def obtener_usuario_por_correo(correo):
     try:
-        # Reutilizamos la misma configuración de tu compañero
         url, headers = get_supabase_headers()
         
-        # Hacemos la consulta a la tabla 'usuarios' filtrando por el correo
-        # Pedimos 'select=*' para traer todos los datos (incluyendo el rol)
         url_consulta = f"{url}/rest/v1/usuarios?correo=eq.{requests.utils.quote(correo)}&select=*"
         
         resp = requests.get(url_consulta, headers=headers)
@@ -47,7 +42,7 @@ def obtener_usuario_por_correo(correo):
         if resp.status_code == 200:
             datos = resp.json()
             if len(datos) > 0:
-                return datos[0]  # Retorna el diccionario con todos los datos del usuario
+                return datos[0]
                 
         return None
     except Exception as e:
@@ -74,7 +69,6 @@ def obtener_inventario_actual():
 
 def obtener_fichas_activas():
     url, headers = get_supabase_headers()
-    # Obtenemos los registros ordenados cronológicamente para reconstruir el historial por ficha
     resp = requests.get(f"{url}/rest/v1/registro_evento?select=numero_ficha,nombre_comun,tipo_evento,numero_ejemplar,observacion,destino&order=fecha_creacion.asc", headers=headers)
     fichas_activas = {}
     
@@ -104,13 +98,11 @@ def obtener_fichas_activas():
             elif tipo == 'Egreso':
                 fichas_estado[ficha]['saldo'] -= qty
                 
-            # Actualizamos la última observación y estado
             if obs != 'Sin observaciones' and obs != '':
                 fichas_estado[ficha]['obs'] = obs
             if destino != 'En centro' and destino != '':
                 fichas_estado[ficha]['destino'] = destino
                 
-        # Agrupamos las fichas con saldo positivo (Activas en el centro) por especie
         for ficha, data in fichas_estado.items():
             if data['saldo'] > 0:
                 especie = data['especie']
@@ -155,11 +147,9 @@ def registrar_evento(datos_form, usuario_email):
         else:
             raise Exception("Ficha no encontrada.")
     else:
-        # Formatear y estandarizar Nombre Común
         raw_comun = datos_form.get('nombre_comun', '').strip()
         nombre_comun = " ".join(raw_comun.split()).upper()
 
-        # Formatear y estandarizar Nombre Científico (ej: "Theristicus melanopis")
         raw_cientifico = datos_form.get('nombre_cientifico', '').strip()
         partes_cientifico = raw_cientifico.split()
         if partes_cientifico:
@@ -173,7 +163,6 @@ def registrar_evento(datos_form, usuario_email):
         if not nombre_comun or not nombre_cientifico:
             raise Exception("Debes ingresar el Nombre Común y Científico para registrar un Ingreso.")
 
-        # VALIDACIÓN ANTI-DUPLICADOS ESTRICTA (Base de datos)
         resp_search = requests.get(f"{url}/rest/v1/registro_evento?select=nombre_comun,nombre_cientifico", headers=headers)
         if resp_search.status_code == 200:
             especies_existentes = {}
@@ -189,13 +178,11 @@ def registrar_evento(datos_form, usuario_email):
             nombre_comun_limpio = normalizar_compara_py(nombre_comun)
             cientifico_limpio = normalizar_compara_py(nombre_cientifico)
 
-            # 1. Chequear si el nombre común ya existe con otro nombre científico
             if nombre_comun_limpio in especies_existentes:
                 dup = especies_existentes[nombre_comun_limpio]
                 if normalizar_compara_py(dup["cientifico"]) != cientifico_limpio:
                     raise Exception(f"La especie '{dup['comun']}' ya está registrada con el nombre científico '{dup['cientifico']}'. No puedes registrarla como '{nombre_cientifico}'.")
 
-            # 2. Chequear si el nombre científico ya está asignado a otro nombre común
             for dup in especies_existentes.values():
                 if normalizar_compara_py(dup["cientifico"]) == cientifico_limpio:
                     if normalizar_compara_py(dup["comun"]) != nombre_comun_limpio:

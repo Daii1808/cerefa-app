@@ -14,7 +14,7 @@
 <div class='bg-emerald-900 p-4 mb-4 rounded-lg text-sm border border-emerald-700'>✅ {{ exito_msg }}</div>
 {% endif %}
 
-<!-- FORMULARIO -->
+
 <form action="/web/registrar" method="POST" onsubmit="return validarFormularioRegistro(event)" class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 mb-8 shadow-xl">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
        
@@ -90,19 +90,19 @@
     </div>
 </form>
 
-<!-- HISTORIAL -->
+
 <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800 overflow-x-auto shadow-xl">
     <div class="flex flex-col xl:flex-row xl:items-center justify-between mb-4 border-b border-zinc-800 pb-4 gap-4">
         <h2 class="text-xl text-zinc-400 font-semibold shrink-0">Historial <span class="text-sm font-normal text-zinc-500">(Click para detalles)</span></h2>
         
-        <!-- Botón de Descarga PDF -->
+        
         <button onclick="descargarPDF()" type="button" class="bg-blue-700 hover:bg-blue-600 text-white text-sm font-bold py-1.5 px-4 rounded-full shadow transition-colors flex items-center gap-2 border border-blue-500 mr-2">
             📄 Descargar PDF
         </button>
 
-        <!-- Filtros -->
+        
         <div class="flex flex-wrap items-center gap-2">
-            <!-- Filtro Semestre -->
+            
             <select id="filtro_semestre" onchange="filtrarHistorial()" class="bg-zinc-950 border border-zinc-700 py-1.5 px-4 rounded-full text-sm text-zinc-400 outline-none focus:border-emerald-500 cursor-pointer appearance-none transition-all hover:bg-zinc-900 focus:bg-zinc-900">
                 <option value="">Todos los Semestres</option>
                 <option value="S1">1° Semestre (Ene - Jun)</option>
@@ -166,7 +166,7 @@
     </table>
 </div>
 
-<!-- MODAL FICHA: compacto; vista → Modificar → Guardar -->
+
 <div id="modal_ficha" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-3 sm:p-4 transition-opacity" onclick="cerrarModal(event)">
     <div class="bg-zinc-900 border border-zinc-700 rounded-xl w-full max-w-sm max-h-[90vh] flex flex-col shadow-2xl relative" onclick="event.stopPropagation()">
         <button type="button" onclick="cerrarModal(event)" class="absolute top-2 right-2 z-10 text-zinc-500 hover:text-white text-lg leading-none px-1">✕</button>
@@ -230,38 +230,32 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- === LÓGICA DE GENERACIÓN DE PDF === -->
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-    // Inyectamos los datos completos desde el backend para el reporte PDF
     const registrosCompletos = {{ lista | tojson | safe }};
 
     function descargarPDF() {
         const { jsPDF } = window.jspdf;
-        // Crear documento horizontal (landscape) porque son muchas columnas
         const doc = new jsPDF('l', 'pt', 'a4'); 
         
-        // Determinar si hay un filtro de semestre aplicado
         const filtroSemestre = document.getElementById('filtro_semestre').value;
         const añoActual = new Date().getFullYear();
         let tituloPDF = "Reporte de Registros CEREFAS";
         if (filtroSemestre === 'S1') tituloPDF += ` - 1° Semestre ${añoActual}`;
         if (filtroSemestre === 'S2') tituloPDF += ` - 2° Semestre ${añoActual}`;
 
-        // Configurar título
         doc.setFontSize(16);
         doc.text(tituloPDF, 40, 40);
 
-        // Definir columnas exactamente como en el archivo Excel 'prueba.xlsx'
         const columnas = [
             "FECHA", "N° de ficha", "Nombre comun", "Nombre científico", 
             "Nº Acta", "Cant.", "Tipo de evento", "Categoría", 
             "Saldo anterior", "Saldo actual", "Destino", "Observaciones"
         ];
 
-        // Obtener solo las fichas que están visibles tras aplicar los filtros
         const filasVisibles = Array.from(document.querySelectorAll('tbody tr.cursor-pointer')).filter(tr => tr.style.display !== 'none');
         const fichasVisibles = filasVisibles.map(tr => tr.children[0].textContent.trim());
 
@@ -290,31 +284,29 @@
             return;
         }
 
-        // Generar tabla PDF
         doc.autoTable({
             head: [columnas],
             body: datosImprimir,
             startY: 60,
             styles: { fontSize: 7.5, cellPadding: 3, overflow: 'linebreak' },
             columnStyles: {
-                0: { cellWidth: 55 }, // FECHA
-                1: { cellWidth: 50 }, // N° de ficha
-                2: { cellWidth: 70 }, // Nombre comun
-                3: { cellWidth: 80 }, // Nombre científico
-                4: { cellWidth: 50 }, // Nº Acta
-                5: { cellWidth: 25 }, // Cant.
-                6: { cellWidth: 45 }, // Tipo de evento
-                7: { cellWidth: 65 }, // Categoría
-                8: { cellWidth: 45 }, // Saldo anterior
-                9: { cellWidth: 45 }, // Saldo actual
-                10: { cellWidth: 65 }, // Destino
-                11: { cellWidth: 'auto' } // Observaciones
+                0: { cellWidth: 55 },
+                1: { cellWidth: 50 },
+                2: { cellWidth: 70 },
+                3: { cellWidth: 80 },
+                4: { cellWidth: 50 },
+                5: { cellWidth: 25 },
+                6: { cellWidth: 45 },
+                7: { cellWidth: 65 },
+                8: { cellWidth: 45 },
+                9: { cellWidth: 45 },
+                10: { cellWidth: 65 },
+                11: { cellWidth: 'auto' }
             },
-            headStyles: { fillColor: [6, 78, 59] }, // bg-emerald-900 para combinar con el diseño
+            headStyles: { fillColor: [6, 78, 59] },
             theme: 'grid'
         });
 
-        // Calcular Estadísticas de los Registros Filtrados
         const registrosFiltradosObj = registrosCompletos.filter(r => fichasVisibles.includes(r.numero_ficha));
         const totalIngresosPDF = registrosFiltradosObj.filter(r => r.tipo_evento === 'Ingreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
         const totalEgresosPDF = registrosFiltradosObj.filter(r => r.tipo_evento === 'Egreso').reduce((acc, curr) => acc + (parseInt(curr.numero_ejemplar) || 0), 0);
@@ -329,7 +321,6 @@
 
         let currentY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 30 : 150;
 
-        // Si la sección estadística no cabe en la página actual, la enviamos a una nueva página
         if (currentY + 230 > 595) {
             doc.addPage();
             currentY = 40;
@@ -384,18 +375,15 @@
         drawBar(40, currentY, "Fallecido / Deceso / Eutanasia", fallPCT, 245, 158, 11);
         drawBar(420, currentY, "Rescates Propios CEREFAS", rescPCT, 245, 158, 11);
 
-        // Agregar espacio para firma digital
         currentY += 60;
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
         doc.text("Firma: ___________________________", 40, currentY);
         doc.text("Responsable CEREFAS", 40, currentY + 15);
 
-        // Descargar archivo con nombre dinámico
         const nombreArchivo = `CEREFAS_Reporte_${filtroSemestre ? filtroSemestre + '_' : ''}${añoActual}.pdf`;
         doc.save(nombreArchivo);
     }
-    // ===================================
 
     function toggleFormulario() {
         const val = document.getElementById('tipo_evento').value;
@@ -436,7 +424,6 @@
                 const nombreUpper = r.nombre_comun.toUpperCase();
                 if (!diccionarioEspecies[nombreUpper]) {
                     diccionarioEspecies[nombreUpper] = r.nombre_cientifico;
-                    // Agregar al datalist visual si no existe
                     if(dataList && !Array.from(dataList.options).some(opt => opt.value === nombreUpper)) {
                         const option = document.createElement('option');
                         option.value = nombreUpper;
@@ -473,15 +460,14 @@
                 if (!str) return '';
                 return str
                     .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+                    .replace(/[\u0300-\u036f]/g, "")
                     .toLowerCase()
-                    .replace(/[^a-z]/g, ''); // Eliminar todo excepto letras a-z (puntos, espacios, comas, guiones, números, etc.)
+                    .replace(/[^a-z]/g, '');
             };
 
             const nombreComunLimpio = normalizarCompara(nombreComun);
             const cientificoLimpio = normalizarCompara(nombreCientifico);
 
-            // Validaciones Estructurales
             if (nombreComunLimpio.length < 3) {
                 alert("El Nombre Común es demasiado corto o no contiene suficientes letras reales.");
                 return false;
@@ -497,8 +483,6 @@
                 return false;
             }
 
-            // 1. Validar si ya existe esta especie con un nombre científico distinto
-            // o si el nombre científico ya está registrado para otra especie (Bloqueo Estricto)
             let especieDuplicadaNombre = null;
             let especieDuplicadaCientifico = null;
 
@@ -524,7 +508,6 @@
                 return false;
             }
 
-            // 2. Similitud Difusa (Levenshtein) - Warning/Advertencia de Confirmación
             const obtenerDistanciaLevenshtein = (a, b) => {
                 const matrix = [];
                 for (let i = 0; i <= b.length; i++) matrix[i] = [i];
@@ -539,7 +522,6 @@
                 return matrix[b.length][a.length];
             };
 
-            // Solo buscar similitud difusa si no es un duplicado exacto ya controlado
             if (!especieDuplicadaNombre) {
                 let especieSimilarNombre = null;
                 for (const key of Object.keys(diccionarioEspecies)) {
@@ -570,12 +552,10 @@
                 }
             }
 
-            // Formatear y normalizar antes de enviar
             if (especieDuplicadaNombre) {
                 inputComun.value = especieDuplicadaNombre.comun;
                 inputCientifico.value = especieDuplicadaNombre.cientifico;
             } else {
-                // Auto-formatear nuevo registro
                 inputComun.value = nombreComun.trim().replace(/\s+/g, ' ').toUpperCase();
                 
                 const partesCientifico = nombreCientifico.trim().replace(/\s+/g, ' ').split(' ');
@@ -593,7 +573,6 @@
         return true;
     }
 
-    // --- Modal ficha: permiso modificar_fichas (auth_service.py / seguridad.py) ---
     const CAMPOS_EDITABLES = ['modal_fecha', 'modal_acta', 'modal_destino', 'modal_obs'];
 
     function obtenerIdRegistro() {
@@ -701,7 +680,6 @@
         };
 
         try {
-            // Ruta en seguridad.py (mismo blueprint que /seguridad/modificar)
             const { ok, data } = await apiPostJson(`/api/fauna/seguridad/actualizar/${encodeURIComponent(id)}`, datosModificados);
             if (ok && data.success) {
                 alert(data.mensaje || 'Cambios guardados con éxito.');
@@ -787,19 +765,16 @@
             const coincideEspecie = filtroEspecie === '' || especieCompleta.includes(filtroEspecie);
             const coincideTipo = filtroTipo === '' || tipo.includes(filtroTipo);
 
-            // === FILTRO DE SEMESTRE ===
             const filtroSemestre = document.getElementById('filtro_semestre').value;
             let coincideSemestre = true;
             if (filtroSemestre !== '' && fecha !== '-') {
-                // Asumimos formato AAAA-MM-DD
                 const mes = parseInt(fecha.split('-')[1], 10);
                 if (filtroSemestre === 'S1') {
-                    coincideSemestre = (mes >= 1 && mes <= 6); // Enero a Junio
+                    coincideSemestre = (mes >= 1 && mes <= 6);
                 } else if (filtroSemestre === 'S2') {
-                    coincideSemestre = (mes >= 7 && mes <= 12); // Julio a Diciembre
+                    coincideSemestre = (mes >= 7 && mes <= 12);
                 }
             }
-            // ==========================
 
             if (coincideGeneral && coincideFecha && coincideEspecie && coincideTipo && coincideSemestre) {
                 fila.style.display = '';

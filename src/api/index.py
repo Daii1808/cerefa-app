@@ -10,7 +10,6 @@ from flask import render_template, request, redirect, url_for, session
 from src.config.app import app
 from src.database import repository
 
-# Configuración de Sesión y Seguridad
 app.secret_key = 'cerefa_super_secret_key_2026'
 app.permanent_session_lifetime = datetime.timedelta(minutes=10)
 
@@ -39,9 +38,7 @@ def login():
                 if datos_usuario and 'rol' in datos_usuario:
                     session['rol'] = datos_usuario['rol']
                 else:
-                    # Por si acaso no encuentra el rol, le dejas uno por defecto o manejas el error
                     session['rol'] = 'practicante' 
-                # =======================
 
                 return redirect(url_for('index'))
             else:
