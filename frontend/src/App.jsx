@@ -904,7 +904,7 @@ function App() {
             </form>
             
             <div style={{ marginTop: '20px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-              {modoRegistro ? '¿Ya tienes cuenta?' : '¿Eres médico veterinario nuevo?'}{' '}
+              {modoRegistro ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}{' '}
               <button 
                 type="button" 
                 onClick={() => { setModoRegistro(!modoRegistro); setAuthError(''); setAuthMensaje(''); }}
